@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GASTOS HOGAR G.G. + Gestión</title>
+    <title>GASTOS HOGAR G.G. + Sincronizado</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f4f7f9; }
@@ -18,8 +18,9 @@
         .autocomplete-suggestion { position: absolute; top: 0; left: 0; z-index: 1; pointer-events: auto; color: #9ca3af; padding-top: 0.5rem; padding-left: 0.75rem; }
     </style>
     <script type="module">
+        const GAS_URL = "https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbxnXygMtkGQIvn3e36dxNvAo81itaB_cCIY16qoctHbE5CUXRz5KT0ydkwgLbivJp3V5Q/exec"; //
+        
         // --- CONSTANTES ---
-        const STORAGE_KEY = 'gastos_hogar_gg_data';
         const PAYERS = ['Juan', 'Tania'];
         const CATEGORIES = {
             DAILY: ['PEAJE', 'COMIDA', 'GASOLINA', 'SUPERMERCADO', 'FARMACIA', 'TRANSPORTE', 'PANADERIA'],
@@ -27,25 +28,57 @@
         };
 
         // --- ESTADO (STATE) ---
+        // Este estado ahora se llena desde Google Sheets
         let state = {
             daily: [],
             monthly: [],
             jcOnly: []
         };
 
-        // --- ALMACENAMIENTO ---
-        function loadData() {
+        // --- ALMACENAMIENTO (Ahora usa Fetch) ---
+        async function fetchData(url, options = {}) {
             try {
-                const stored = localStorage.getItem(STORAGE_KEY);
-                if (stored) state = JSON.parse(stored);
-            } catch (e) { console.error("Error cargando datos:", e); }
+                // Mostrar overlay de carga antes de la petición
+                document.getElementById('loading-overlay').classList.remove('hidden'); 
+                
+                const response = await fetch(url, options);
+                
+                // Ocultar overlay de carga
+                document.getElementById('loading-overlay').classList.add('hidden');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                if (data.success === false) {
+                     throw new Error(`Error de la API: ${data.message}`);
+                }
+                return data;
+            } catch (e) {
+                console.error("Error en la operación de red/API:", e);
+                // Ocultar overlay de carga en caso de error
+                document.getElementById('loading-overlay').classList.add('hidden'); 
+                alertUser("Error de Sincronización", `No se pudo conectar con Google Sheets. ${e.message}`);
+                return null;
+            }
         }
 
-        function saveData() {
-            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } 
-            catch (e) { console.error("Error guardando datos:", e); }
-        }
+        async function loadData() {
+            const data = await fetchData(GAS_URL + '?action=GET');
 
+            if (data) {
+                // El Apps Script ya nos devuelve la estructura {daily, monthly, jcOnly}
+                state.daily = data.daily || [];
+                state.monthly = data.monthly || [];
+                state.jcOnly = data.jcOnly || [];
+                renderAll();
+            } else {
+                 // Dejar el estado vacío si falla la carga.
+                 state = { daily: [], monthly: [], jcOnly: [] };
+            }
+        }
+        
         // --- UTILIDADES ---
         window.alertUser = (title, message) => {
             document.getElementById('modal-title').textContent = title;
@@ -57,7 +90,7 @@
             document.getElementById('custom-modal').classList.add('hidden');
         };
 
-        // Función para encontrar un gasto por ID y tipo
+        // Función para encontrar un gasto por ID y tipo (ahora busca en el estado actual en memoria)
         function findExpense(id, type) {
             const list = state[type];
             return list.find(item => item.id == id);
@@ -109,20 +142,19 @@
             setupListener('concepto-jc', 'suggestion-jc', CATEGORIES.JC_ONLY);
         };
 
-        // --- LÓGICA PRINCIPAL: REGISTRAR ---
-        function registerExpense(formId, type) {
+        // --- LÓGICA PRINCIPAL: REGISTRAR (Ahora usa Fetch POST) ---
+        async function registerExpense(formId, type) {
             const form = document.getElementById(formId);
             const concepto = form.concepto.value.trim();
             const monto = parseFloat(form.monto.value);
 
-            // CORRECCIÓN: Permite monto >= 0
             if (!concepto || isNaN(monto) || monto < 0) { 
                 alertUser("Datos Inválidos", "Concepto requerido y monto debe ser igual o superior a cero.");
                 return;
             }
 
             let newExpense = {
-                id: Date.now(), // ID único para poder borrar/editar después
+                id: Date.now(),
                 concepto: concepto.toUpperCase(),
                 monto: monto,
                 timestamp: new Date().toISOString(),
@@ -130,52 +162,72 @@
 
             if (type === 'daily') {
                 newExpense.payer = form.pagador.value;
-                state.daily.unshift(newExpense);
             } else if (type === 'monthly') {
                 newExpense.tipo = form.tipo_gasto.value;
                 newExpense.payer = form.pagador_mensual.value;
-                state.monthly.unshift(newExpense);
             } else if (type === 'jcOnly') {
-                newExpense.payer = 'Tania'; // Regla fija
+                newExpense.payer = 'Tania';
                 newExpense.debtor = 'Juan';
-                state.jcOnly.unshift(newExpense);
             }
+            
+            const postData = {
+                action: 'ADD',
+                type: type,
+                data: newExpense
+            };
 
-            saveData();
-            form.reset();
-            // Limpiar fantasmas del autocompletado
-            document.querySelectorAll('.autocomplete-suggestion').forEach(el => el.textContent = '');
-            renderAll();
+            const result = await fetchData(GAS_URL, {
+                method: 'POST',
+                mode: 'cors',
+                cache: 'no-cache',
+                headers: { 'Content-Type': 'text/plain' }, // Necesario para Apps Script
+                body: JSON.stringify(postData)
+            });
+
+            if (result && result.success) {
+                form.reset();
+                document.querySelectorAll('.autocomplete-suggestion').forEach(el => el.textContent = '');
+                // Recargar los datos desde la hoja para asegurar la sincronización
+                await loadData(); 
+            }
         }
 
         window.registerDailyExpense = () => registerExpense('daily-form', 'daily');
         window.registerMonthlyExpense = () => registerExpense('monthly-form', 'monthly');
         window.registerJcExpense = () => registerExpense('jc-form', 'jcOnly');
 
-        // --- LÓGICA PRINCIPAL: ELIMINAR ---
-        window.deleteExpense = (id, type) => {
+        // --- LÓGICA PRINCIPAL: ELIMINAR (Ahora usa Fetch POST) ---
+        window.deleteExpense = async (id, type) => {
             if(!confirm("¿Estás seguro de que deseas eliminar este gasto?")) return;
 
-            if (type === 'daily') {
-                state.daily = state.daily.filter(item => item.id !== id);
-            } else if (type === 'monthly') {
-                state.monthly = state.monthly.filter(item => item.id !== id);
-            } else if (type === 'jcOnly') {
-                state.jcOnly = state.jcOnly.filter(item => item.id !== id);
+            const postData = {
+                action: 'DELETE',
+                type: type,
+                id: id
+            };
+
+            const result = await fetchData(GAS_URL, {
+                method: 'POST',
+                mode: 'cors',
+                cache: 'no-cache',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(postData)
+            });
+            
+            if (result && result.success) {
+                // Recargar los datos desde la hoja
+                await loadData();
             }
-            saveData();
-            renderAll();
         };
 
         // --- LÓGICA PRINCIPAL: EDITAR (Abrir Modal) ---
         window.editExpense = (id, type) => {
             const expense = findExpense(id, type);
-            if (!expense) return alertUser("Error", "Gasto no encontrado para edición.");
+            if (!expense) return alertUser("Error", "Gasto no encontrado para edición. Intenta recargar la página.");
             
             const modal = document.getElementById('edit-modal');
             const form = document.getElementById('edit-form');
             
-            // 1. Ocultar/Mostrar campos según el tipo
             const payerField = document.getElementById('edit-payer-field');
             if (type === 'daily' || type === 'monthly') {
                 payerField.classList.remove('hidden');
@@ -184,18 +236,16 @@
                 payerField.classList.add('hidden');
             }
 
-            // 2. Rellenar campos de la forma
             form['edit-id'].value = id;
             form['edit-type'].value = type;
             form['edit-concepto'].value = expense.concepto;
-            form['edit-monto'].value = expense.monto.toFixed(2);
+            form['edit-monto'].value = expense.monto; // Ya no usamos toFixed(2) aquí para permitir edición precisa
             
-            // 3. Mostrar modal
             modal.classList.remove('hidden');
         };
 
-        // --- LÓGICA PRINCIPAL: EDITAR (Guardar Cambios) ---
-        window.saveEditedExpense = () => {
+        // --- LÓGICA PRINCIPAL: EDITAR (Guardar Cambios) (Ahora usa Fetch POST) ---
+        window.saveEditedExpense = async () => {
             const form = document.getElementById('edit-form');
             const id = form['edit-id'].value;
             const type = form['edit-type'].value;
@@ -203,29 +253,37 @@
             const monto = parseFloat(form['edit-monto'].value);
             const payer = form['edit-pagador'].value;
 
-            // CORRECCIÓN: Permite monto >= 0
             if (!concepto || isNaN(monto) || monto < 0) {
                 return alertUser("Datos Inválidos", "Concepto requerido y monto debe ser igual o superior a cero.");
             }
 
-            // 1. Encontrar el índice
-            const list = getListByType(type);
-            const index = list.findIndex(item => item.id == id);
+            let updatedExpense = {
+                id: id,
+                concepto: concepto.toUpperCase(),
+                monto: monto,
+            };
 
-            if (index !== -1) {
-                // 2. Actualizar la data
-                list[index].concepto = concepto.toUpperCase();
-                list[index].monto = monto;
-                if (type === 'daily' || type === 'monthly') {
-                    list[index].payer = payer;
-                }
-                
-                // 3. Guardar y renderizar
-                saveData();
-                renderAll();
+            if (type === 'daily' || type === 'monthly') {
+                updatedExpense.payer = payer;
+            }
+            
+            const postData = {
+                action: 'EDIT',
+                type: type,
+                data: updatedExpense
+            };
+
+            const result = await fetchData(GAS_URL, {
+                method: 'POST',
+                mode: 'cors',
+                cache: 'no-cache',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(postData)
+            });
+
+            if (result && result.success) {
                 document.getElementById('edit-modal').classList.add('hidden');
-            } else {
-                alertUser("Error", "No se pudo encontrar el gasto para guardar.");
+                await loadData(); // Recargar datos
             }
         };
 
@@ -234,7 +292,7 @@
         };
 
 
-        // --- LÓGICA PRINCIPAL: EXPORTAR ---
+        // --- LÓGICA PRINCIPAL: EXPORTAR (Ahora lee el estado en memoria, que viene de la Hoja) ---
         window.exportData = () => {
             let csvContent = "data:text/csv;charset=utf-8,";
             csvContent += "Tipo,Fecha,Concepto,Pagador,Monto\n";
@@ -242,9 +300,8 @@
             const processList = (list, typeName) => {
                 list.forEach(item => {
                     const date = new Date(item.timestamp).toLocaleDateString();
-                    // Escapar comas y saltos de línea en el concepto (por si acaso)
                     const safeConcept = `"${item.concepto.replace(/"/g, '""')}"`; 
-                    csvContent += `${typeName},${date},${safeConcept},${item.payer},${item.monto}\n`;
+                    csvContent += `${typeName},${date},${safeConcept},${item.payer || item.debtor},${item.monto}\n`;
                 });
             };
 
@@ -255,12 +312,51 @@
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "gastos_hogar_gg.csv");
+            link.setAttribute("download", "gastos_hogar_gg_sincronizados.csv");
             document.body.appendChild(link);
             link.click();
         };
 
-        // --- CÁLCULO DE BALANCE ---
+        // --- LÓGICA PRINCIPAL: Cierre de Mes (Ahora usa Fetch POST) ---
+        window.resetMonthlyExpenses = async () => {
+            const totalDiffEl = document.getElementById('combined-balance-display');
+            const messageContent = totalDiffEl.querySelector('span') ? totalDiffEl.querySelector('span').textContent.trim() : '¡Cuentas Saldadas!';
+            
+            let confirmationMessage = '';
+            if (totalDiffEl.innerHTML.includes('Saldadas')) {
+                confirmationMessage = "ADVERTENCIA: Las cuentas parecen estar saldadas. ¿Deseas borrar de todas formas los registros históricos y empezar un nuevo mes?";
+            } else {
+                confirmationMessage = `SALDO PENDIENTE DETECTADO.\n\n${messageContent} a liquidar.\n\n¿Confirma que este saldo ha sido liquidado (pagado) y desea borrar TODOS los gastos (Diarios, Mensuales y JC) para empezar un nuevo mes?`;
+            }
+
+            if (!confirm(confirmationMessage)) {
+                return;
+            }
+
+            // Llamada POST para borrar todo en Sheets
+            const postData = {
+                action: 'RESET_ALL',
+                type: 'daily', // el tipo no importa para esta acción, pero se envía
+            };
+
+            const result = await fetchData(GAS_URL, {
+                method: 'POST',
+                mode: 'cors',
+                cache: 'no-cache',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(postData)
+            });
+
+            if (result && result.success) {
+                // 3. Recargar el estado vacío y notificar
+                await loadData();
+                alertUser("¡Ciclo Cerrado!", "Todos los gastos han sido borrados de Google Sheets. La contabilidad mensual empieza ahora en 0.00.");
+                switchTab('gastos-diarios'); 
+            }
+        };
+
+
+        // --- CÁLCULO DE BALANCE (Sin cambios) ---
         function calculateBalance(expenseArray, type) {
             let totalJuanPaid = 0;
             let totalTaniaPaid = 0;
@@ -283,7 +379,6 @@
             }
 
             if (type === 'jcOnly') {
-                // Juan debe el 100% de lo que pagó Tania.
                 return { 
                     totalExpense: totalTaniaPaid + totalJuanPaid, 
                     juanNetDebtToTania: -totalTaniaPaid, 
@@ -294,7 +389,7 @@
             return {};
         }
 
-        // --- RENDERIZADO ---
+        // --- RENDERIZADO (Sin cambios) ---
         function formatBalanceHTML(difference) {
             const absDiff = Math.abs(difference);
             const formatted = absDiff.toFixed(2);
@@ -324,13 +419,11 @@
             const monthly = calculateBalance(state.monthly, 'monthly');
             const jc = calculateBalance(state.jcOnly, 'jcOnly');
 
-            // Visualizaciones individuales
             const updateEl = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = html; };
             updateEl('daily-balance-display', formatBalanceHTML(daily.juanDifference));
             updateEl('monthly-balance-display', formatBalanceHTML(monthly.juanDifference));
             updateEl('jc-balance-display', formatBalanceHTML(jc.juanNetDebtToTania));
 
-            // Resúmenes de texto
             document.getElementById('daily-balance-summary').textContent = getBalanceText(daily.juanDifference);
             document.getElementById('daily-paid-summary').textContent = `J: $${daily.totalJuanPaid.toFixed(0)} | T: $${daily.totalTaniaPaid.toFixed(0)}`;
             
@@ -340,7 +433,6 @@
             document.getElementById('jc-balance-summary').textContent = getBalanceText(jc.juanNetDebtToTania);
             document.getElementById('jc-paid-summary').textContent = `J: $${jc.totalJuanPaid.toFixed(0)} | T: $${jc.totalTaniaPaid.toFixed(0)}`;
 
-            // TOTAL
             const totalDiff = (daily.juanDifference || 0) + (monthly.juanDifference || 0) + (jc.juanNetDebtToTania || 0);
             updateEl('combined-balance-display', formatBalanceHTML(totalDiff));
         }
@@ -349,6 +441,10 @@
             const renderList = (elementId, data, type) => {
                 const list = document.getElementById(elementId);
                 if (!list) return;
+                
+                // Ordenar por ID/Timestamp de forma descendente para mostrar el más reciente primero
+                data.sort((a, b) => b.id - a.id); 
+
                 if (data.length === 0) { list.innerHTML = '<li class="p-4 text-center text-gray-400 italic">Sin registros</li>'; return; }
 
                 list.innerHTML = data.map(exp => {
@@ -398,9 +494,13 @@
             document.getElementById(`btn-${tabId}`).classList.add('active');
         };
 
-        window.addEventListener('load', () => {
-            loadData();
-            renderAll();
+        window.addEventListener('load', async () => {
+            // Eliminar cualquier dato de localStorage, ya no se usa
+            localStorage.removeItem('gastos_hogar_gg_data'); 
+            
+            // Cargar datos desde Google Sheets
+            await loadData();
+            
             setupAutocompleteListeners();
             window.switchTab('gastos-diarios'); 
         });
@@ -408,6 +508,14 @@
 </head>
 <body class="bg-gray-100 min-h-screen pb-10">
 
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex flex-col items-center justify-center p-4">
+        <svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="text-white mt-4 font-semibold text-lg">Sincronizando con Google Sheets...</p>
+    </div>
+    
     <div id="custom-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full transform transition-all scale-100">
             <h3 id="modal-title" class="text-xl font-bold text-gray-800 mb-2"></h3>
@@ -456,7 +564,7 @@
         <header class="bg-blue-800 text-white p-6 sm:rounded-t-xl shadow-lg flex justify-between items-center">
             <div>
                 <h1 class="text-2xl font-extrabold tracking-tight">GASTOS HOGAR G.G.</h1>
-                <p class="text-blue-200 text-xs mt-1">Control de Finanzas Compartidas</p>
+                <p class="text-blue-200 text-xs mt-1">Control de Finanzas Compartidas (Sincronizado)</p>
             </div>
             <button onclick="exportData()" class="bg-blue-700 hover:bg-blue-600 text-xs px-3 py-2 rounded border border-blue-500 transition">
                 ⬇ CSV
@@ -604,10 +712,17 @@
                 </div>
 
                 <h4 class="text-center text-gray-500 text-sm mb-2 uppercase tracking-widest">Saldo Total a Liquidar</h4>
-                <div id="combined-balance-display"></div>
+                <div id="combined-balance-display" class="mb-6"></div>
+
+                <button onclick="resetMonthlyExpenses()" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow transition flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                      <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM11 7v6l4.7 2.3.8-1.5-3.5-1.7V7h-2Z" />
+                    </svg>
+                    CERRAR Y LIQUIDAR MES
+                </button>
             </div>
 
         </div>
     </div>
 </body>
-</html>
+    </html>
