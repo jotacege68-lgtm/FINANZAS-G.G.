@@ -238,14 +238,18 @@
                 headers: { 'Content-Type': 'text/plain' }, // Necesario para Apps Script
                 body: JSON.stringify(postData)
             });
-
+            
             if (result && result.success) {
                 form.reset();
                 document.querySelectorAll('.autocomplete-suggestion').forEach(el => el.textContent = '');
+                
                 // Recargar los datos desde la hoja para asegurar la sincronización
                 await loadData(); 
+                
+                // NUEVA NOTIFICACIÓN DE ÉXITO:
+                showToast("Gasto agregado con éxito!"); 
             }
-        }
+
 
         window.registerDailyExpense = () => registerExpense('daily-form', 'daily');
         window.registerMonthlyExpense = () => registerExpense('monthly-form', 'monthly');
