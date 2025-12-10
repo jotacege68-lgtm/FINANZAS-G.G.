@@ -343,11 +343,15 @@
                 body: JSON.stringify(postData)
             });
 
-            if (result && result.success) {
+                        if (result && result.success) {
                 document.getElementById('edit-modal').classList.add('hidden');
                 await loadData(); // Recargar datos
+                
+                // NUEVA NOTIFICACIÓN DE ÉXITO:
+                showToast("Gasto editado con éxito.");
             }
         };
+
 
         window.closeEditModal = () => {
             document.getElementById('edit-modal').classList.add('hidden');
