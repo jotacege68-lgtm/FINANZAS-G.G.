@@ -80,6 +80,8 @@
         }
         
         // --- UTILIDADES ---
+                
+        // 1. Modal para ERRORES CRÍTICOS (Sincronización fallida, Datos inválidos)
         window.alertUser = (title, message) => {
             document.getElementById('modal-title').textContent = title;
             document.getElementById('modal-message').textContent = message;
@@ -90,6 +92,36 @@
             document.getElementById('custom-modal').classList.add('hidden');
         };
 
+        // 2. Función para NOTIFICACIONES FLOTANTES (Gasto agregado, Eliminado)
+        window.showToast = (message, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            
+            let colorClass = 'bg-green-600';
+            if (type === 'error') colorClass = 'bg-red-600';
+            if (type === 'warning') colorClass = 'bg-yellow-600';
+            
+            const toast = document.createElement('div');
+            toast.className = `${colorClass} text-white px-4 py-3 rounded-lg shadow-xl font-semibold opacity-0 transition-opacity duration-300 ease-out mb-2 pointer-events-auto`;
+            toast.textContent = message;
+            
+            container.appendChild(toast);
+            
+            // Mostrar el toast
+            setTimeout(() => {
+                toast.classList.remove('opacity-0');
+                toast.classList.add('opacity-100');
+            }, 10);
+
+            // Ocultar y eliminar después de 3 segundos
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+                // Esperar a que termine la transición para eliminarlo
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+        
+        // Función para encontrar un gasto por ID y tipo... (El resto del código JavaScript sigue)
         // Función para encontrar un gasto por ID y tipo (ahora busca en el estado actual en memoria)
         function findExpense(id, type) {
             const list = state[type];
