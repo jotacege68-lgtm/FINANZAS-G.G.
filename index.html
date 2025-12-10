@@ -143,16 +143,39 @@
         };
 
         // --- LÓGICA PRINCIPAL: REGISTRAR (Ahora usa Fetch POST) ---
+        
         async function registerExpense(formId, type) {
             const form = document.getElementById(formId);
             const concepto = form.concepto.value.trim();
-            const monto = parseFloat(form.monto.value);
-
-            if (!concepto || isNaN(monto) || monto < 0) { 
-                alertUser("Datos Inválidos", "Concepto requerido y monto debe ser igual o superior a cero.");
+            const montoInput = form.monto.value; // Usamos el string original para chequear si está vacío
+            const monto = parseFloat(montoInput);
+            
+            // 1. Validar que el campo no esté vacío
+            if (montoInput === "" || !concepto) {
+                alertUser("Datos Incompletos", "Por favor, completa el Monto y el Concepto.");
                 return;
             }
 
+            // 2. Validar que el monto sea un número y no sea negativo
+            if (isNaN(monto) || monto < 0) {
+                alertUser("Monto Inválido", "El monto debe ser un número válido y no puede ser negativo.");
+                return;
+            }
+
+            // 3. Validar que se haya seleccionado un pagador (solo para DAILY y MONTHLY)
+            if (type === 'daily' && !form.pagador.value) {
+                alertUser("Pagador Requerido", "Por favor, selecciona quién hizo el pago.");
+                return;
+            }
+            if (type === 'monthly' && !form.pagador_mensual.value) {
+                alertUser("Pagador Requerido", "Por favor, selecciona quién hizo el pago.");
+                return;
+            }
+
+
+            let newExpense = {
+                id: Date.now(),
+            // ... resto del código que sigue igual ...
             let newExpense = {
                 id: Date.now(),
                 concepto: concepto.toUpperCase(),
