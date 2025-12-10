@@ -273,9 +273,12 @@
                 body: JSON.stringify(postData)
             });
             
-            if (result && result.success) {
+                        if (result && result.success) {
                 // Recargar los datos desde la hoja
                 await loadData();
+                
+                // NUEVA NOTIFICACIÓN DE ÉXITO:
+                showToast("Gasto eliminado correctamente.");
             }
         };
 
