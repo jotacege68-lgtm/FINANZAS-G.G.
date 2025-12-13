@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -11,15 +12,16 @@
         .tab-button { transition: all 0.3s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 8px 10px; font-size: 0.75rem; }
         .tab-button.active { border-bottom: 3px solid #1d4ed8; background-color: #e0f2fe; font-weight: 600; color: #1d4ed8; }
         .tab-content { display: none; }
-        
+       
         /* Estilos para autocompletado */
         .autocomplete-container { position: relative; }
         .autocomplete-input { position: relative; z-index: 2; background: transparent; }
         .autocomplete-suggestion { position: absolute; top: 0; left: 0; z-index: 1; pointer-events: auto; color: #9ca3af; padding-top: 0.5rem; padding-left: 0.75rem; }
     </style>
     <script type="module">
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxnXygMtkGQIvn3e36dxNvAo81itaB_cCIY16qoctHbE5CUXRz5KT0ydkwgLbivJp3V5Q/exec"; //
-        
+        // *** REVISA Y CONFIRMA ESTA URL ***
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxnXygMtkGQIvn3e36dxNvAo81itaB_cCIY16qoctHbE5CUXRz5KT0ydkwgLbivJp3V5Q/exec";
+       
         // --- CONSTANTES ---
         const PAYERS = ['Juan', 'Tania'];
         const CATEGORIES = {
@@ -28,21 +30,20 @@
         };
 
         // --- ESTADO (STATE) ---
-        // Este estado ahora se llena desde Google Sheets
         let state = {
             daily: [],
             monthly: [],
             jcOnly: []
         };
 
-        // --- ALMACENAMIENTO (Ahora usa Fetch) ---
+        // --- ALMACENAMIENTO (Fetch con Overlay de Carga) ---
         async function fetchData(url, options = {}) {
             try {
                 // Mostrar overlay de carga antes de la petición
-                document.getElementById('loading-overlay').classList.remove('hidden'); 
-                
+                document.getElementById('loading-overlay').classList.remove('hidden');
+               
                 const response = await fetch(url, options);
-                
+               
                 // Ocultar overlay de carga
                 document.getElementById('loading-overlay').classList.add('hidden');
 
@@ -50,7 +51,7 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                
+               
                 if (data.success === false) {
                      throw new Error(`Error de la API: ${data.message}`);
                 }
@@ -58,7 +59,7 @@
             } catch (e) {
                 console.error("Error en la operación de red/API:", e);
                 // Ocultar overlay de carga en caso de error
-                document.getElementById('loading-overlay').classList.add('hidden'); 
+                document.getElementById('loading-overlay').classList.add('hidden');
                 alertUser("Error de Sincronización", `No se pudo conectar con Google Sheets. ${e.message}`);
                 return null;
             }
@@ -74,14 +75,14 @@
                 state.jcOnly = data.jcOnly || [];
                 renderAll();
             } else {
-                 // Dejar el estado vacío si falla la carga.
-                 state = { daily: [], monthly: [], jcOnly: [] };
+                // Dejar el estado vacío si falla la carga.
+                state = { daily: [], monthly: [], jcOnly: [] };
             }
         }
-        
+       
         // --- UTILIDADES ---
-                
-        // 1. Modal para ERRORES CRÍTICOS (Sincronización fallida, Datos inválidos)
+       
+        // 1. Modal para ERRORES CRÍTICOS
         window.alertUser = (title, message) => {
             document.getElementById('modal-title').textContent = title;
             document.getElementById('modal-message').textContent = message;
@@ -92,20 +93,20 @@
             document.getElementById('custom-modal').classList.add('hidden');
         };
 
-        // 2. Función para NOTIFICACIONES FLOTANTES (Gasto agregado, Eliminado)
+        // 2. Función para NOTIFICACIONES FLOTANTES
         window.showToast = (message, type = 'success') => {
             const container = document.getElementById('toast-container');
-            
+           
             let colorClass = 'bg-green-600';
             if (type === 'error') colorClass = 'bg-red-600';
             if (type === 'warning') colorClass = 'bg-yellow-600';
-            
+           
             const toast = document.createElement('div');
             toast.className = `${colorClass} text-white px-4 py-3 rounded-lg shadow-xl font-semibold opacity-0 transition-opacity duration-300 ease-out mb-2 pointer-events-auto`;
             toast.textContent = message;
-            
+           
             container.appendChild(toast);
-            
+           
             // Mostrar el toast
             setTimeout(() => {
                 toast.classList.remove('opacity-0');
@@ -120,9 +121,7 @@
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         };
-        
-        // Función para encontrar un gasto por ID y tipo... (El resto del código JavaScript sigue)
-        // Función para encontrar un gasto por ID y tipo (ahora busca en el estado actual en memoria)
+       
         function findExpense(id, type) {
             const list = state[type];
             return list.find(item => item.id == id);
@@ -137,7 +136,7 @@
             const input = document.getElementById(inputId);
             const suggestionSpan = document.getElementById(suggestionId);
             const query = input.value.toUpperCase();
-            
+           
             if (query.length === 0) { suggestionSpan.textContent = ''; return; }
 
             const bestMatch = categoryList.find(cat => cat.startsWith(query));
@@ -174,14 +173,14 @@
             setupListener('concepto-jc', 'suggestion-jc', CATEGORIES.JC_ONLY);
         };
 
-        // --- LÓGICA PRINCIPAL: REGISTRAR (Ahora usa Fetch POST) ---
-        
+        // --- LÓGICA PRINCIPAL: REGISTRAR (Fetch POST) ---
+       
         async function registerExpense(formId, type) {
             const form = document.getElementById(formId);
             const concepto = form.concepto.value.trim();
-            const montoInput = form.monto.value; // Usamos el string original para chequear si está vacío
+            const montoInput = form.monto.value;
             const monto = parseFloat(montoInput);
-            
+           
             // 1. Validar que el campo no esté vacío
             if (montoInput === "" || !concepto) {
                 alertUser("Datos Incompletos", "Por favor, completa el Monto y el Concepto.");
@@ -204,7 +203,6 @@
                 return;
             }
 
-
             let newExpense = {
                 id: Date.now(),
                 concepto: concepto.toUpperCase(),
@@ -218,10 +216,10 @@
                 newExpense.tipo = form.tipo_gasto.value;
                 newExpense.payer = form.pagador_mensual.value;
             } else if (type === 'jcOnly') {
-                newExpense.payer = 'Tania';
-                newExpense.debtor = 'Juan';
+                newExpense.payer = 'Tania'; // Lo paga Tania
+                newExpense.debtor = 'Juan'; // Lo debe Juan (Mi género es masculino)
             }
-            
+           
             const postData = {
                 action: 'ADD',
                 type: type,
@@ -235,24 +233,23 @@
                 headers: { 'Content-Type': 'text/plain' }, // Necesario para Apps Script
                 body: JSON.stringify(postData)
             });
-            
+           
             if (result && result.success) {
                 form.reset();
                 document.querySelectorAll('.autocomplete-suggestion').forEach(el => el.textContent = '');
-                
+               
                 // Recargar los datos desde la hoja para asegurar la sincronización
-                await loadData(); 
-                
-                // NUEVA NOTIFICACIÓN DE ÉXITO:
-                showToast("Gasto agregado con éxito!"); 
+                await loadData();
+               
+                showToast("Gasto agregado con éxito!");
             }
-
+        }
 
         window.registerDailyExpense = () => registerExpense('daily-form', 'daily');
         window.registerMonthlyExpense = () => registerExpense('monthly-form', 'monthly');
         window.registerJcExpense = () => registerExpense('jc-form', 'jcOnly');
 
-        // --- LÓGICA PRINCIPAL: ELIMINAR (Ahora usa Fetch POST) ---
+        // --- LÓGICA PRINCIPAL: ELIMINAR (Fetch POST) ---
         window.deleteExpense = async (id, type) => {
             if(!confirm("¿Estás seguro de que deseas eliminar este gasto?")) return;
 
@@ -269,12 +266,11 @@
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify(postData)
             });
-            
-                        if (result && result.success) {
+           
+            if (result && result.success) {
                 // Recargar los datos desde la hoja
                 await loadData();
-                
-                // NUEVA NOTIFICACIÓN DE ÉXITO:
+               
                 showToast("Gasto eliminado correctamente.");
             }
         };
@@ -283,10 +279,10 @@
         window.editExpense = (id, type) => {
             const expense = findExpense(id, type);
             if (!expense) return alertUser("Error", "Gasto no encontrado para edición. Intenta recargar la página.");
-            
+           
             const modal = document.getElementById('edit-modal');
             const form = document.getElementById('edit-form');
-            
+           
             const payerField = document.getElementById('edit-payer-field');
             if (type === 'daily' || type === 'monthly') {
                 payerField.classList.remove('hidden');
@@ -298,12 +294,12 @@
             form['edit-id'].value = id;
             form['edit-type'].value = type;
             form['edit-concepto'].value = expense.concepto;
-            form['edit-monto'].value = expense.monto; // Ya no usamos toFixed(2) aquí para permitir edición precisa
-            
+            form['edit-monto'].value = expense.monto;
+           
             modal.classList.remove('hidden');
         };
 
-        // --- LÓGICA PRINCIPAL: EDITAR (Guardar Cambios) (Ahora usa Fetch POST) ---
+        // --- LÓGICA PRINCIPAL: EDITAR (Guardar Cambios) (Fetch POST) ---
         window.saveEditedExpense = async () => {
             const form = document.getElementById('edit-form');
             const id = form['edit-id'].value;
@@ -325,7 +321,7 @@
             if (type === 'daily' || type === 'monthly') {
                 updatedExpense.payer = payer;
             }
-            
+           
             const postData = {
                 action: 'EDIT',
                 type: type,
@@ -340,22 +336,20 @@
                 body: JSON.stringify(postData)
             });
 
-                        if (result && result.success) {
+            if (result && result.success) {
                 document.getElementById('edit-modal').classList.add('hidden');
                 await loadData(); // Recargar datos
-                
-                // NUEVA NOTIFICACIÓN DE ÉXITO:
+               
                 showToast("Gasto editado con éxito.");
             }
         };
-
 
         window.closeEditModal = () => {
             document.getElementById('edit-modal').classList.add('hidden');
         };
 
 
-        // --- LÓGICA PRINCIPAL: EXPORTAR (Ahora lee el estado en memoria, que viene de la Hoja) ---
+        // --- LÓGICA PRINCIPAL: EXPORTAR ---
         window.exportData = () => {
             let csvContent = "data:text/csv;charset=utf-8,";
             csvContent += "Tipo,Fecha,Concepto,Pagador,Monto\n";
@@ -363,7 +357,7 @@
             const processList = (list, typeName) => {
                 list.forEach(item => {
                     const date = new Date(item.timestamp).toLocaleDateString();
-                    const safeConcept = `"${item.concepto.replace(/"/g, '""')}"`; 
+                    const safeConcept = `"${item.concepto.replace(/"/g, '""')}"`;
                     csvContent += `${typeName},${date},${safeConcept},${item.payer || item.debtor},${item.monto}\n`;
                 });
             };
@@ -380,11 +374,11 @@
             link.click();
         };
 
-        // --- LÓGICA PRINCIPAL: Cierre de Mes (Ahora usa Fetch POST) ---
+        // --- LÓGICA PRINCIPAL: Cierre de Mes (Fetch POST) ---
         window.resetMonthlyExpenses = async () => {
             const totalDiffEl = document.getElementById('combined-balance-display');
             const messageContent = totalDiffEl.querySelector('span') ? totalDiffEl.querySelector('span').textContent.trim() : '¡Cuentas Saldadas!';
-            
+           
             let confirmationMessage = '';
             if (totalDiffEl.innerHTML.includes('Saldadas')) {
                 confirmationMessage = "ADVERTENCIA: Las cuentas parecen estar saldadas. ¿Deseas borrar de todas formas los registros históricos y empezar un nuevo mes?";
@@ -414,12 +408,12 @@
                 // 3. Recargar el estado vacío y notificar
                 await loadData();
                 alertUser("¡Ciclo Cerrado!", "Todos los gastos han sido borrados de Google Sheets. La contabilidad mensual empieza ahora en 0.00.");
-                switchTab('gastos-diarios'); 
+                switchTab('gastos-diarios');
             }
         };
 
 
-        // --- CÁLCULO DE BALANCE (Sin cambios) ---
+        // --- CÁLCULO DE BALANCE ---
         function calculateBalance(expenseArray, type) {
             let totalJuanPaid = 0;
             let totalTaniaPaid = 0;
@@ -433,26 +427,27 @@
 
             if (type === 'daily' || type === 'monthly') {
                 const requiredPerPerson = totalExpense / 2;
-                return { 
-                    totalExpense, 
-                    juanDifference: totalJuanPaid - requiredPerPerson, 
-                    totalJuanPaid, 
-                    totalTaniaPaid 
+                return {
+                    totalExpense,
+                    juanDifference: totalJuanPaid - requiredPerPerson,
+                    totalJuanPaid,
+                    totalTaniaPaid
                 };
             }
 
             if (type === 'jcOnly') {
-                return { 
-                    totalExpense: totalTaniaPaid + totalJuanPaid, 
-                    juanNetDebtToTania: -totalTaniaPaid, 
-                    totalJuanPaid, 
-                    totalTaniaPaid 
+                // Juan debe el total de lo que pagó Tania. La diferencia es el total que pagó Tania (negativo para Juan)
+                return {
+                    totalExpense: totalTaniaPaid + totalJuanPaid,
+                    juanNetDebtToTania: -totalTaniaPaid,
+                    totalJuanPaid,
+                    totalTaniaPaid
                 };
             }
             return {};
         }
 
-        // --- RENDERIZADO (Sin cambios) ---
+        // --- RENDERIZADO ---
         function formatBalanceHTML(difference) {
             const absDiff = Math.abs(difference);
             const formatted = absDiff.toFixed(2);
@@ -489,10 +484,10 @@
 
             document.getElementById('daily-balance-summary').textContent = getBalanceText(daily.juanDifference);
             document.getElementById('daily-paid-summary').textContent = `J: $${daily.totalJuanPaid.toFixed(0)} | T: $${daily.totalTaniaPaid.toFixed(0)}`;
-            
+           
             document.getElementById('monthly-balance-summary').textContent = getBalanceText(monthly.juanDifference);
             document.getElementById('monthly-paid-summary').textContent = `J: $${monthly.totalJuanPaid.toFixed(0)} | T: $${monthly.totalTaniaPaid.toFixed(0)}`;
-            
+           
             document.getElementById('jc-balance-summary').textContent = getBalanceText(jc.juanNetDebtToTania);
             document.getElementById('jc-paid-summary').textContent = `J: $${jc.totalJuanPaid.toFixed(0)} | T: $${jc.totalTaniaPaid.toFixed(0)}`;
 
@@ -504,15 +499,17 @@
             const renderList = (elementId, data, type) => {
                 const list = document.getElementById(elementId);
                 if (!list) return;
-                
+               
                 // Ordenar por ID/Timestamp de forma descendente para mostrar el más reciente primero
-                data.sort((a, b) => b.id - a.id); 
+                data.sort((a, b) => b.id - a.id);
 
                 if (data.length === 0) { list.innerHTML = '<li class="p-4 text-center text-gray-400 italic">Sin registros</li>'; return; }
 
                 list.innerHTML = data.map(exp => {
                     const date = new Date(exp.timestamp);
                     const dateStr = `${date.getDate()}/${date.getMonth()+1}`;
+                    const payerText = exp.payer === 'Juan' ? `<span class="font-semibold text-blue-600">Juan</span>` : `<span class="font-semibold text-pink-600">Tania</span>`;
+                   
                     return `
                         <li class="p-3 border-b border-gray-100 last:border-0 flex justify-between items-center bg-white hover:bg-gray-50 transition">
                             <div class="flex-1">
@@ -520,20 +517,20 @@
                                     <span class="font-bold text-gray-800">${exp.concepto}</span>
                                     <span class="text-xs text-gray-400">${dateStr}</span>
                                 </div>
-                                <div class="text-xs text-gray-500">Pagó: <span class="font-semibold text-blue-600">${exp.payer}</span></div>
+                                <div class="text-xs text-gray-500">Pagó: ${payerText}</div>
                             </div>
                             <div class="flex items-center gap-3">
                                 <span class="font-bold text-gray-700">$${exp.monto.toFixed(2)}</span>
-                                
+                               
                                 <button onclick="editExpense(${exp.id}, '${type}')" class="text-gray-300 hover:text-blue-500 transition p-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
                                 </button>
-                                
+                               
                                 <button onclick="deleteExpense(${exp.id}, '${type}')" class="text-gray-300 hover:text-red-500 transition p-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
                                 </button>
                             </div>
@@ -559,26 +556,26 @@
 
         window.addEventListener('load', async () => {
             // Eliminar cualquier dato de localStorage, ya no se usa
-            localStorage.removeItem('gastos_hogar_gg_data'); 
-            
+            localStorage.removeItem('gastos_hogar_gg_data');
+           
             // Cargar datos desde Google Sheets
             await loadData();
-            
+           
             setupAutocompleteListeners();
-            window.switchTab('gastos-diarios'); 
+            window.switchTab('gastos-diarios');
         });
     </script>
 </head>
 <body class="bg-gray-100 min-h-screen pb-10">
 
-    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex flex-col items-center justify-center p-4">
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex flex-col items-center justify-center p-4 hidden">
         <svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
         <p class="text-white mt-4 font-semibold text-lg">Sincronizando con Google Sheets...</p>
     </div>
-    
+   
     <div id="custom-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full transform transition-all scale-100">
             <h3 id="modal-title" class="text-xl font-bold text-gray-800 mb-2"></h3>
@@ -586,13 +583,13 @@
             <button onclick="closeModal()" class="w-full py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-lg">Entendido</button>
         </div>
     </div>
-    
+   
     <div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-lg w-full transform transition-all scale-100">
             <h3 class="text-xl font-bold text-blue-600 mb-4 border-b pb-2">Editar Gasto</h3>
-            
+           
             <form id="edit-form" onsubmit="event.preventDefault(); saveEditedExpense();" class="space-y-4">
-                
+               
                 <input type="hidden" name="edit-id" id="edit-id">
                 <input type="hidden" name="edit-type" id="edit-type">
 
@@ -609,12 +606,12 @@
                         <input type="number" name="edit-monto" step="0.01" class="mt-1 block w-full rounded border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="0.00" required>
                     </div>
                 </div>
-                
+               
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase">Concepto</label>
                     <input type="text" name="edit-concepto" class="mt-1 block w-full rounded border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Ej: Supermercado" required>
                 </div>
-                
+               
                 <div class="flex gap-3 pt-2">
                     <button type="button" onclick="closeEditModal()" class="flex-1 py-2.5 text-gray-600 font-semibold rounded-lg border border-gray-300 hover:bg-gray-100 transition">Cancelar</button>
                     <button type="submit" class="flex-1 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-lg">Guardar Cambios</button>
@@ -622,7 +619,7 @@
             </form>
         </div>
     </div>
-    
+   
     <div class="max-w-3xl mx-auto sm:pt-6">
         <header class="bg-blue-800 text-white p-6 sm:rounded-t-xl shadow-lg flex justify-between items-center">
             <div>
@@ -657,135 +654,158 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-gray-500 uppercase">Monto</label>
-                                <input type="number" name="monto" step="0.01" class="mt-1 block w-full rounded border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="0.00">
+                                <label class="block text-xs font-bold text-gray-500 uppercase">Monto ($)</label>
+                                <input type="number" name="monto" step="0.01" class="mt-1 block w-full rounded border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="0.00" required>
                             </div>
                         </div>
-                        <div class="autocomplete-container">
-                            <label class="block text-xs font-bold text-gray-500 uppercase">Concepto</label>
-                            <input type="text" id="concepto-diario" name="concepto" class="autocomplete-input mt-1 block w-full rounded border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Ej: Supermercado" autocomplete="off">
-                            <span id="suggestion-diario" class="autocomplete-suggestion mt-1 block w-full"></span>
+                       
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Concepto (Enter/Tab para completar)</label>
+                            <div class="autocomplete-container mt-1">
+                                <span id="suggestion-diario" class="autocomplete-suggestion text-sm"></span>
+                                <input type="text" name="concepto" id="concepto-diario" class="autocomplete-input block w-full rounded border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Ej: Supermercado" required>
+                            </div>
                         </div>
-                        <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow transition">
-                            Registrar Gasto
+                       
+                        <button type="submit" class="w-full py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-lg mt-4">
+                            Registrar Gasto Diario
                         </button>
                     </form>
                 </div>
-                
-                <div id="daily-balance-display" class="mb-6"></div>
-                <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Últimos movimientos</h4>
-                <ul id="daily-expense-list" class="space-y-1"></ul>
-            </div>
 
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2 border-b pb-1">Balance Diario</h3>
+                    <div id="daily-balance-display"></div>
+                </div>
+
+                <h3 class="text-lg font-semibold text-gray-700 mb-2 border-b pb-1">Últimos Gastos Diarios</h3>
+                <ul id="daily-expense-list" class="divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                    </ul>
+            </div>
+           
             <div id="gastos-mensual-anual" class="tab-content">
-                <div class="large-form-container p-5 rounded-xl mb-6 bg-green-50 border-green-200">
+                <div class="large-form-container p-5 rounded-xl mb-6 bg-blue-50 border-blue-200">
                     <form id="monthly-form" onsubmit="event.preventDefault(); registerMonthlyExpense();" class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-3 gap-4">
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 uppercase">Pagador</label>
-                                <select name="pagador_mensual" class="mt-1 block w-full rounded border-gray-300 p-2 shadow-sm focus:border-blue-500">
+                                <select name="pagador_mensual" class="mt-1 block w-full rounded border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="">Seleccionar</option>
                                     <option value="Juan">Juan</option>
                                     <option value="Tania">Tania</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-gray-500 uppercase">Tipo</label>
-                                <select name="tipo_gasto" class="mt-1 block w-full rounded border-gray-300 p-2 shadow-sm">
-                                    <option value="Mensual">Mensual</option>
-                                    <option value="Anual">Anual</option>
+                                <label class="block text-xs font-bold text-gray-500 uppercase">Tipo Gasto</label>
+                                <select name="tipo_gasto" class="mt-1 block w-full rounded border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="MENSUAL">MENSUAL</option>
+                                    <option value="ANUAL">ANUAL</option>
                                 </select>
                             </div>
-                        </div>
-                        <div class="grid grid-cols-3 gap-4">
-                            <div class="col-span-2">
-                                <label class="block text-xs font-bold text-gray-500 uppercase">Concepto</label>
-                                <input type="text" name="concepto" class="mt-1 w-full rounded border-gray-300 p-2 shadow-sm" placeholder="Renta, UTE...">
-                            </div>
                             <div>
-                                <label class="block text-xs font-bold text-gray-500 uppercase">Monto</label>
-                                <input type="number" name="monto" step="0.01" class="mt-1 w-full rounded border-gray-300 p-2 shadow-sm" placeholder="0.00">
+                                <label class="block text-xs font-bold text-gray-500 uppercase">Monto ($)</label>
+                                <input type="number" name="monto" step="0.01" class="mt-1 block w-full rounded border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="0.00" required>
                             </div>
                         </div>
-                        <button type="submit" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow transition">
-                            Registrar Recurrente
+                       
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Concepto</label>
+                            <input type="text" name="concepto" class="mt-1 block w-full rounded border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Ej: Ute, Antel, Alquiler" required>
+                        </div>
+                       
+                        <button type="submit" class="w-full py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-lg mt-4">
+                            Registrar Gasto Mensual
                         </button>
                     </form>
                 </div>
-                <div id="monthly-balance-display" class="mb-6"></div>
-                <ul id="monthly-expense-list" class="space-y-1"></ul>
+
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2 border-b pb-1">Balance Mensual</h3>
+                    <div id="monthly-balance-display"></div>
+                </div>
+
+                <h3 class="text-lg font-semibold text-gray-700 mb-2 border-b pb-1">Últimos Gastos Mensuales/Anuales</h3>
+                <ul id="monthly-expense-list" class="divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                    </ul>
             </div>
 
             <div id="gastos-solo-jc" class="tab-content">
-                <div class="large-form-container p-5 rounded-xl mb-6 bg-red-50 border-red-200">
-                    <p class="text-xs text-red-600 font-bold mb-3 text-center uppercase tracking-wider">Tania paga, Juan debe 100%</p>
+                <div class="large-form-container p-5 rounded-xl mb-6 bg-blue-50 border-blue-200">
                     <form id="jc-form" onsubmit="event.preventDefault(); registerJcExpense();" class="space-y-4">
-                        <div class="grid grid-cols-3 gap-4">
-                            <div class="col-span-2 autocomplete-container">
-                                <label class="block text-xs font-bold text-gray-500 uppercase">Concepto</label>
-                                <input type="text" id="concepto-jc" name="concepto" class="autocomplete-input mt-1 w-full rounded border-gray-300 p-2 shadow-sm" autocomplete="off">
-                                <span id="suggestion-jc" class="autocomplete-suggestion mt-1 block w-full"></span>
+                        <p class="text-sm font-semibold text-blue-600 mb-3">Este gasto siempre se registra como Pagado por **Tania** y adeudado por **Juan**.</p>
+                       
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase">Monto ($)</label>
+                                <input type="number" name="monto" step="0.01" class="mt-1 block w-full rounded border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="0.00" required>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-gray-500 uppercase">Monto</label>
-                                <input type="number" name="monto" step="0.01" class="mt-1 w-full rounded border-gray-300 p-2 shadow-sm" placeholder="0.00">
+                                <label class="block text-xs font-bold text-gray-500 uppercase">Concepto (Enter/Tab para completar)</label>
+                                <div class="autocomplete-container mt-1">
+                                    <span id="suggestion-jc" class="autocomplete-suggestion text-sm"></span>
+                                    <input type="text" name="concepto" id="concepto-jc" class="autocomplete-input block w-full rounded border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Ej: Club AEBU" required>
+                                </div>
                             </div>
                         </div>
-                        <button type="submit" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow transition">
+                       
+                        <button type="submit" class="w-full py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-lg mt-4">
                             Registrar Gasto JC
                         </button>
                     </form>
                 </div>
-                <div id="jc-balance-display" class="mb-6"></div>
-                <ul id="jc-expense-list" class="space-y-1"></ul>
+
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2 border-b pb-1">Balance JC</h3>
+                    <div id="jc-balance-display"></div>
+                </div>
+
+                <h3 class="text-lg font-semibold text-gray-700 mb-2 border-b pb-1">Últimos Gastos JC</h3>
+                <ul id="jc-expense-list" class="divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                    </ul>
             </div>
 
             <div id="balance-final-mensual" class="tab-content">
-                <h3 class="text-xl font-bold text-gray-800 mb-6 text-center border-b pb-4">Resumen Consolidado</h3>
-                
-                <div class="space-y-4 mb-8">
-                    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm flex justify-between items-center">
-                        <div>
-                            <p class="text-xs font-bold text-gray-400 uppercase">Diario (50%)</p>
-                            <p id="daily-balance-summary" class="text-sm font-semibold text-gray-800"></p>
-                        </div>
-                        <div class="text-right">
-                            <p id="daily-paid-summary" class="text-xs text-gray-500 font-mono"></p>
-                        </div>
+                <div class="space-y-6">
+                   
+                    <div class="p-6 bg-blue-50 border-2 border-blue-600 rounded-xl shadow-md">
+                        <h3 class="text-xl font-extrabold text-blue-800 mb-4 border-b pb-2">BALANCE TOTAL DEL MES</h3>
+                        <div id="combined-balance-display" class="mb-4"></div>
+                       
+                        <button onclick="resetMonthlyExpenses()" class="w-full py-2.5 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition shadow-lg mt-4">
+                            CERRAR MES Y BORRAR TODO
+                        </button>
                     </div>
 
-                    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm flex justify-between items-center">
-                        <div>
-                            <p class="text-xs font-bold text-gray-400 uppercase">Mensual (50%)</p>
-                            <p id="monthly-balance-summary" class="text-sm font-semibold text-gray-800"></p>
-                        </div>
-                        <div class="text-right">
-                            <p id="monthly-paid-summary" class="text-xs text-gray-500 font-mono"></p>
-                        </div>
-                    </div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2 border-b pb-1">Resumen por Categoría</h3>
 
-                    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm flex justify-between items-center">
-                        <div>
-                            <p class="text-xs font-bold text-gray-400 uppercase">JC Only (100%)</p>
-                            <p id="jc-balance-summary" class="text-sm font-semibold text-gray-800"></p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm font-semibold text-gray-700">
+                        <div class="p-4 bg-white rounded-lg shadow border-l-4 border-blue-500">
+                            <p>DIARIOS:</p>
+                            <div id="daily-balance-summary" class="text-blue-600 text-base"></div>
+                            <p id="daily-paid-summary" class="text-xs text-gray-500 mt-1"></p>
                         </div>
-                        <div class="text-right">
-                            <p id="jc-paid-summary" class="text-xs text-gray-500 font-mono"></p>
+                        <div class="p-4 bg-white rounded-lg shadow border-l-4 border-blue-500">
+                            <p>MENSUALES/ANUALES:</p>
+                            <div id="monthly-balance-summary" class="text-blue-600 text-base"></div>
+                            <p id="monthly-paid-summary" class="text-xs text-gray-500 mt-1"></p>
+                        </div>
+                        <div class="p-4 bg-white rounded-lg shadow border-l-4 border-blue-500">
+                            <p>SOLO JC:</p>
+                            <div id="jc-balance-summary" class="text-blue-600 text-base"></div>
+                            <p id="jc-paid-summary" class="text-xs text-gray-500 mt-1"></p>
                         </div>
                     </div>
                 </div>
-
-                <h4 class="text-center text-gray-500 text-sm mb-2 uppercase tracking-widest">Saldo Total a Liquidar</h4>
-                <div id="combined-balance-display" class="mb-6"></div>
-
-                <button onclick="resetMonthlyExpenses()" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow transition flex items-center justify-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
-                      <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM11 7v6l4.7 2.3.8-1.5-3.5-1.7V7h-2Z" />
-                    </svg>
-                    CERRAR Y LIQUIDAR MES
-                </button>
             </div>
-
         </div>
+
+        <footer class="text-center text-gray-500 text-sm mt-6">
+            Desarrollado por JC & T
+        </footer>
     </div>
+   
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col items-end pointer-events-none">
+        </div>
+
 </body>
-    </html>
+</html>
