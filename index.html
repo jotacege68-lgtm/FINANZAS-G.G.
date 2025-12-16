@@ -195,7 +195,7 @@
         // === CONFIGURACIÓN GLOBAL ===========================================
         // ====================================================================
 
-        // !! LA NUEVA URL DE GOOGLE APPS SCRIPT !!
+        // !! LA ÚLTIMA URL DE GOOGLE APPS SCRIPT (Verificada y limpia) !!
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwl47P5DhisrGNIhU3SFDVDn6WoIe6RbrTe_txrjZl8QIJbIxiahkr1d9UVurqJHWgtoQ/exec"; 
         
         // Pagadores (Lista fija)
@@ -242,7 +242,6 @@
         const formatDateForInput = (date) => {
             if (!date) return '';
             const d = new Date(date);
-            // Si la fecha de la hoja es solo AAAA-MM-DD, se necesita ajustar para evitar problemas de zona horaria
             const year = d.getFullYear();
             const month = String(d.getMonth() + 1).padStart(2, '0');
             const day = String(d.getDate()).padStart(2, '0');
@@ -429,8 +428,6 @@
                 message = `Tania debe ${formatCurrency(Math.abs(tania))} a Juan.`;
                 color = 'text-red-600';
             } else if (juan > 0 && tania === 0) {
-                 // El balance solo se calcula por diferencia, si uno está en 0 y el otro no,
-                 // es una situación menos común que podría requerir revisión, pero se informa.
                  message = `Saldo: Juan tiene ${formatCurrency(juan)} a favor, Tania 0.`;
                  color = 'text-yellow-600';
             } else if (tania > 0 && juan === 0) {
@@ -490,20 +487,24 @@
 
         // ====================================================================
         // === COMUNICACIÓN CON GOOGLE APPS SCRIPT (GAS) ======================
+        // === AHORA USA GET PARA TODAS LAS ACCIONES ============================
         // ====================================================================
         
         /**
-         * Envía una petición POST al Apps Script.
+         * Envía una petición GET al Apps Script con el payload codificado en la URL.
          * @param {Object} payload Los datos a enviar (action, sheetKey, data).
          */
         const sendRequest = async (payload) => {
+            // Codifica el objeto payload completo como un parámetro de consulta
+            const queryParams = new URLSearchParams({ payload: JSON.stringify(payload) });
+            // Si payload es null (como en loadInitialData), no se añaden parámetros.
+            const urlWithParams = payload ? `${GAS_URL}?${queryParams.toString()}` : GAS_URL;
+            
             try {
-                const response = await fetch(GAS_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload)
+                // Usamos GET para evitar el bloqueo de CORS que tenía el POST
+                const response = await fetch(urlWithParams, {
+                    method: 'GET',
+                    // No se necesita mode: 'cors' ni headers para GET
                 });
 
                 const data = await response.json();
@@ -515,7 +516,7 @@
                 return data;
 
             } catch (error) {
-                showNotification(`Error de petición: ${error.message}`, 'error');
+                showNotification(`Error de petición: ${error.message}. Asegúrese de que el Apps Script fue re-desplegado.`, 'error');
                 console.error("Error en sendRequest:", error);
                 throw error; 
             }
@@ -524,21 +525,17 @@
 
         /**
          * Carga los datos iniciales (gastos y categorías) desde Google Sheets.
+         * Ahora usa sendRequest sin payload (usa el método GET base).
          */
         const loadInitialData = async () => {
             try {
-                const response = await fetch(GAS_URL, { method: 'GET', mode: 'cors' });
-                const data = await response.json();
-                
-                if (data.error) {
-                    throw new Error(data.error);
-                }
+                // Llama a sendRequest sin payload, activando la parte de carga inicial en doGet
+                const data = await sendRequest(null); 
                 
                 // 1. ASIGNAR LAS CATEGORÍAS DESDE GOOGLE SHEETS
                 if (data.CATEGORIES_FROM_SHEETS) {
                     state.categories = data.CATEGORIES_FROM_SHEETS; 
                 } else {
-                    // Fallback si el campo viene vacío (aunque el GAS ya tiene un fallback)
                     state.categories = { DAILY: [], MONTHLY: [], JC_ONLY: [] };
                 }
                 
@@ -554,7 +551,7 @@
                 fillPayerSelects(); 
                 renderLists();
                 updateBalanceView();
-                switchTab(state.activeTab); // Asegurar que la pestaña activa se muestre correctamente
+                switchTab(state.activeTab); 
 
                 showNotification('Datos sincronizados correctamente.', 'success');
 
@@ -576,7 +573,6 @@
         const validateConcept = (concept, sheetKey) => {
             const list = state.categories[sheetKey];
             if (!list || list.length === 0) {
-                 // Si no hay lista de categorías (ej. error de carga), lo permitimos para no bloquear
                 return true; 
             }
             // Forzamos mayúsculas para la comparación estricta
@@ -612,7 +608,6 @@
                     sheetKey: sheetKey,
                     data: {
                         ...data,
-                        // Aseguramos que el concepto esté en mayúsculas para el GAS
                         concepto: data.concepto.toUpperCase(),
                         monto: parseFloat(data.monto)
                     }
@@ -657,7 +652,6 @@
                     sheetKey: sheetKey,
                     data: {
                         ...data,
-                        // Aseguramos que el concepto esté en mayúsculas
                         concepto: data.concepto.toUpperCase(),
                         monto: parseFloat(data.monto)
                     }
@@ -806,4 +800,4 @@
 
     </script>
 </body>
-</html>
+                </html>
