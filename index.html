@@ -500,7 +500,6 @@
             try {
                 const response = await fetch(GAS_URL, {
                     method: 'POST',
-                    mode: 'cors', // Necesario para evitar problemas de CORS
                     headers: {
                         'Content-Type': 'application/json',
                     },
