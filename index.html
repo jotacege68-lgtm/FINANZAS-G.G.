@@ -7,11 +7,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .active-tab { color: #2563eb; border-bottom: 3px solid #2563eb; }
+        .bg-juan { background-color: #dbeafe; color: #1e40af; } /* Azul claro / Texto azul oscuro */
+        .bg-tania { background-color: #fce7f3; color: #9d174d; } /* Rosa claro / Texto rosa oscuro */
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col font-sans text-gray-900">
-
-    <div id="notification-container" class="fixed top-4 inset-x-0 flex flex-col items-center z-50 pointer-events-none"></div>
 
     <nav class="sticky top-0 bg-white shadow-md z-10">
         <div class="max-w-4xl mx-auto px-2">
@@ -28,13 +28,13 @@
         <div id="tab-container">
             <div id="content-forms">
                 <form id="main-form" class="bg-white p-6 rounded-3xl shadow-sm mb-6 border border-gray-100">
-                    <h2 id="form-title" class="text-xl font-black mb-4 text-blue-800 uppercase">Cargando...</h2>
+                    <h2 id="form-title" class="text-xl font-black mb-4 text-blue-800 uppercase text-center tracking-widest">Cargando...</h2>
                     <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-400 uppercase ml-1">Concepto</label>
                             <input type="text" id="input-concepto" name="concepto" required autocomplete="off" 
                                    oninput="this.value = this.value.toUpperCase()" list="concept-list"
-                                   placeholder="Selecciona o escribe..."
+                                   placeholder="¿En qué se gastó?"
                                    class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg focus:border-blue-500 outline-none transition-all">
                             <datalist id="concept-list"></datalist>
                         </div>
@@ -45,7 +45,7 @@
                             </div>
                             <div id="container-pagador">
                                 <label class="block text-xs font-bold text-gray-400 uppercase ml-1">Pagador</label>
-                                <select name="pagador" class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg outline-none bg-white focus:border-blue-500">
+                                <select name="pagador" id="main-select-pagador" class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg outline-none bg-white focus:border-blue-500">
                                     <option value="Juan">Juan</option>
                                     <option value="Tania">Tania</option>
                                 </select>
@@ -55,7 +55,7 @@
                         <div id="container-obs" class="hidden">
                             <input type="text" name="observacion" placeholder="Nota..." class="w-full border-2 border-gray-100 rounded-2xl p-4 outline-none">
                         </div>
-                        <button type="submit" id="btn-submit" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all uppercase mt-2">Guardar</button>
+                        <button type="submit" id="btn-submit" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all uppercase mt-2">Guardar Gasto</button>
                     </div>
                 </form>
                 <div id="items-list" class="space-y-3 pb-10"></div>
@@ -65,21 +65,21 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-white p-5 rounded-3xl shadow-sm border-l-4 border-blue-500">
                         <p class="text-[10px] font-bold text-gray-400 uppercase">Juan (Compartido)</p>
-                        <p id="total-juan" class="text-lg font-black">$ 0</p>
+                        <p id="total-juan" class="text-lg font-black tracking-tight">$ 0</p>
                     </div>
                     <div class="bg-white p-5 rounded-3xl shadow-sm border-l-4 border-pink-500">
                         <p class="text-[10px] font-bold text-gray-400 uppercase">Tania (Compartido)</p>
-                        <p id="total-tania" class="text-lg font-black">$ 0</p>
+                        <p id="total-tania" class="text-lg font-black tracking-tight">$ 0</p>
                     </div>
                 </div>
                 <div class="bg-gradient-to-r from-pink-500 to-pink-600 p-6 rounded-3xl shadow-lg text-white">
-                    <p class="text-[10px] font-bold opacity-80 uppercase mb-1">Deuda Juan 100% (Solo JC)</p>
+                    <p class="text-[10px] font-bold opacity-80 uppercase mb-1">Deuda Juan (Solo JC)</p>
                     <p id="total-jc" class="text-3xl font-black tracking-tighter">$ 0</p>
-                    <p class="text-[9px] mt-1 italic opacity-90">* Este monto se suma a lo que Juan debe pagar a Tania</p>
+                    <p class="text-[9px] mt-1 italic opacity-90">* Pagado por Tania para Juan (100% Juan)</p>
                 </div>
                 <div class="bg-white p-10 rounded-[2.5rem] shadow-xl text-center border-2 border-gray-50">
                     <p class="text-xs font-bold text-gray-300 uppercase mb-3">Balance Final</p>
-                    <p id="balance-main-msg" class="text-2xl font-black text-gray-800 leading-tight uppercase tracking-tighter italic">Cargando...</p>
+                    <p id="balance-main-msg" class="text-2xl font-black text-gray-800 leading-tight uppercase italic tracking-tighter">Cargando...</p>
                 </div>
             </div>
         </div>
@@ -135,15 +135,11 @@
             if (state.activeTab === 'BALANCE') {
                 document.getElementById('content-forms').classList.add('hidden');
                 document.getElementById('tab-BALANCE').classList.remove('hidden');
-                
                 document.getElementById('total-juan').textContent = format(state.balance.totalJuan);
                 document.getElementById('total-tania').textContent = format(state.balance.totalTania);
                 document.getElementById('total-jc').textContent = format(state.balance.soloJc);
-                
                 const j = state.balance.juan;
-                let msg = "Cuentas al día";
-                if (j > 0.1) msg = `Tania le debe ${format(j)} a Juan`;
-                else if (j < -0.1) msg = `Juan le debe ${format(Math.abs(j))} a Tania`;
+                let msg = j > 0.1 ? `Tania debe ${format(j)} a Juan` : j < -0.1 ? `Juan debe ${format(Math.abs(j))} a Tania` : "Cuentas al día";
                 document.getElementById('balance-main-msg').textContent = msg;
             } else {
                 document.getElementById('content-forms').classList.remove('hidden');
@@ -161,16 +157,21 @@
                 [...(state.data[key] || [])].reverse().slice(0, 15).forEach(item => {
                     const d = document.createElement('div');
                     d.className = "bg-white p-5 rounded-2xl shadow-sm flex justify-between items-center border border-gray-50";
+                    
+                    const pReal = item.pagador || (state.activeTab === 'SOLO JC' ? 'Tania' : 'Juan');
+                    const colorClass = pReal === 'Juan' ? 'bg-juan' : 'bg-tania';
+
                     d.innerHTML = `
                         <div class="flex-grow">
                             <div class="font-black text-gray-800 text-sm">${item.concepto || 'GASTO'}</div>
-                            <div class="text-[10px] font-bold text-gray-300 uppercase">
-                                ${item.fecha ? String(item.fecha).split('T')[0] : ''} | <span class="text-blue-500">${item.pagador || 'JUAN'}</span>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${colorClass}">${pReal}</span>
+                                <span class="text-[10px] font-bold text-gray-300">${item.fecha ? String(item.fecha).split('T')[0] : ''}</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
-                            <div class="font-black text-gray-800">${format(item.monto)}</div>
-                            <button onclick="openEdit('${item.id}','${key}')" class="bg-gray-100 p-3 rounded-xl text-blue-600 font-black">✎</button>
+                            <div class="font-black text-gray-800 tracking-tighter">${format(item.monto)}</div>
+                            <button onclick="openEdit('${item.id}','${key}')" class="bg-gray-100 p-3 rounded-xl text-blue-600 font-black text-lg">✎</button>
                             <button onclick="del('${item.id}','${key}')" class="bg-gray-50 p-3 rounded-xl text-red-300">✕</button>
                         </div>`;
                     list.appendChild(d);
@@ -182,12 +183,13 @@
             e.preventDefault();
             const fd = new FormData(e.target);
             const key = { 'DIARIOS': 'DAILY', 'MENSUAL': 'MONTHLY', 'SOLO JC': 'JC_ONLY' }[state.activeTab];
+            if(state.activeTab === 'SOLO JC') fd.set('pagador', 'Tania');
             const btn = document.getElementById('btn-submit');
             btn.disabled = true; btn.textContent = "GUARDANDO...";
             await api({ action: 'REGISTER', sheetKey: key, data: Object.fromEntries(fd) });
             e.target.reset(); 
             document.getElementById('input-fecha').value = new Date().toISOString().split('T')[0];
-            await refresh(); btn.disabled = false; btn.textContent = "GUARDAR";
+            await refresh(); btn.disabled = false; btn.textContent = "Guardar Gasto";
         };
 
         window.openEdit = (id, key) => {
@@ -195,12 +197,12 @@
             const f = document.getElementById('edit-form');
             f.id.value = id; f.sheetKey.value = key; f.concepto.value = item.concepto;
             f.monto.value = item.monto; f.fecha.value = item.fecha ? String(item.fecha).split('T')[0] : '';
-            f.pagador.value = item.pagador || 'Juan';
+            f.pagador.value = item.pagador || (key === 'JC_ONLY' ? 'Tania' : 'Juan');
             document.getElementById('edit-modal').classList.remove('hidden');
         };
 
         window.closeModal = () => document.getElementById('edit-modal').classList.add('hidden');
-        window.del = async (id, key) => { if(confirm("¿Eliminar?")) { await api({ action: 'DELETE', sheetKey: key, data: {id} }); refresh(); } };
+        window.del = async (id, key) => { if(confirm("¿Borrar?")) { await api({ action: 'DELETE', sheetKey: key, data: {id} }); refresh(); } };
         
         document.getElementById('edit-form').onsubmit = async (e) => {
             e.preventDefault();
