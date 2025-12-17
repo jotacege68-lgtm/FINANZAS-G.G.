@@ -1,1 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finanzas G.G. (Gastos Compartidos)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .modal { transition: opacity 0.25s ease; }
+        .active-tab { color: #2563eb; border-bottom: 2px solid #2563eb; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col font-sans">
+
+    <div id="notification-container" class="fixed top-0 inset-x-0 flex items-start justify-center p-4 z-50 pointer-events-none"></div>
+
+    <nav class="sticky top-0 bg-white shadow-md z-10">
+        <div class="max-w-4xl mx-auto px-4">
+            <div class="flex justify-around h-16">
+                <button data-tab="DIARIOS" class="tab-button py-4 px-2 text-sm font-medium text-gray-500">DIARIOS</button>
+                <button data-tab="MENSUAL" class="tab-button py-4 px-2 text-sm font-medium text-gray-500">MENSUAL</button>
+                <button data-tab="SOLO JC" class="tab-button py-4 px-2 text-sm font-medium text-gray-500">SOLO JC</button>
+                <button data-tab="BALANCE" class="tab-button py-4 px-2 text-sm font-medium text-gray-500">BALANCE</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-4xl mx-auto w-full p-4">
+        <div id="tab-container">
+            <div id="tab-DIARIOS" data-sheet-key="DAILY" class="tab-content hidden">
+                <h2 class="text-2xl font-bold mb-4">Registro de Gastos Diarios</h2>
+                <form id="form-DIARIOS" class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700">Concepto</label>
+                            <input type="text" name="concepto" required list="daily-suggestions" autocomplete="off" 
+                                   oninput="this.value = this.value.toUpperCase()"
+                                   placeholder="Selecciona o escribe..."
+                                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                            <datalist id="daily-suggestions"></datalist>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Monto ($)</label>
+                            <input type="number" step="0.01" name="monto" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Pagador</label>
+                            <select name="pagador" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700">Fecha</label>
+                            <input type="date" name="fecha" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Observación (Opcional)</label>
+                        <input type="text" name="observacion" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">Registrar Gasto Diario</button>
+                </form>
+                <h3 class="text-xl font-semibold mb-3">Últimos Gastos</h3>
+                <div id="daily-list" class="space-y-2"></div>
+            </div>
+
+            <div id="tab-MENSUAL" data-sheet-key="MONTHLY" class="tab-content hidden">
+                <h2 class="text-2xl font-bold mb-4">Gastos Mensuales Fijos</h2>
+                <form id="form-MENSUAL" class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700">Concepto</label>
+                            <input type="text" name="concepto" required list="monthly-suggestions" autocomplete="off" 
+                                   oninput="this.value = this.value.toUpperCase()"
+                                   placeholder="Selecciona o escribe..."
+                                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                            <datalist id="monthly-suggestions"></datalist>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Monto ($)</label>
+                            <input type="number" step="0.01" name="monto" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Pagador</label>
+                            <select name="pagador" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700">Fecha</label>
+                            <input type="date" name="fecha" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">Registrar Gasto Mensual</button>
+                </form>
+                <div id="monthly-list" class="space-y-2"></div>
+            </div>
+
+            <div id="tab-SOLO JC" data-sheet-key="JC_ONLY" class="tab-content hidden">
+                <h2 class="text-2xl font-bold mb-4">Gastos Solo Juan C.</h2>
+                <form id="form-SOLO JC" class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700">Concepto</label>
+                            <input type="text" name="concepto" required list="jc-suggestions" autocomplete="off" 
+                                   oninput="this.value = this.value.toUpperCase()"
+                                   placeholder="Selecciona o escribe..."
+                                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                            <datalist id="jc-suggestions"></datalist>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Monto ($)</label>
+                            <input type="number" step="0.01" name="monto" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Fecha</label>
+                            <input type="date" name="fecha" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <input type="hidden" name="pagador" value="Juan">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">Registrar Gasto JC</button>
+                </form>
+                <div id="jcOnly-list" class="space-y-2"></div>
+            </div>
+
+            <div id="tab-BALANCE" class="tab-content hidden">
+                <h2 class="text-2xl font-bold mb-4">Balance General</h2>
+                <div id="balance-view" class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <p class="text-gray-500">Cargando balance...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <div id="edit-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-75 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 class="text-xl font-bold mb-4">Editar Gasto</h3>
+            <form id="edit-form">
+                <input type="hidden" id="edit-id" name="id">
+                <input type="hidden" id="edit-sheet-key" name="sheetKey">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Concepto</label>
+                    <input type="text" id="edit-concepto" name="concepto" required list="edit-suggestions" 
+                           oninput="this.value = this.value.toUpperCase()"
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                    <datalist id="edit-suggestions"></datalist>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <input type="number" step="0.01" id="edit-monto" name="monto" required class="border p-2 rounded">
+                    <input type="date" id="edit-fecha" name="fecha" required class="border p-2 rounded">
+                </div>
+                <select id="edit-pagador" name="pagador" required class="w-full border p-2 rounded mb-4"></select>
+                <input type="text" id="edit-observacion" name="observacion" placeholder="Observación" class="w-full border p-2 rounded mb-4">
+                <div class="flex justify-end space-x-2">
+                    <button type="button" id="close-modal-btn" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwl47P5DhisrGNIhU3SFDVDn6WoIe6RbrTe_txrjZl8QIJbIxiahkr1d9UVurqJHWgtoQ/exec";
+        const PAYERS = ['Juan', 'Tania'];
+        const SHEET_KEYS = { 'DIARIOS': 'DAILY', 'MENSUAL': 'MONTHLY', 'SOLO JC': 'JC_ONLY' };
+
+        const state = {
+            activeTab: 'DIARIOS',
+            daily: [], monthly: [], jcOnly: [],
+            balance: { juan: 0, tania: 0 },
+            categories: { DAILY: [], MONTHLY: [], JC_ONLY: [] },
+            isSubmitting: false
+        };
+
+        const formatCurrency = (n) => new Intl.NumberFormat('es-UY', { style: 'currency', currency: 'USD' }).format(n);
+
+        const showNotification = (msg, type = 'info') => {
+            const container = document.getElementById('notification-container');
+            const el = document.createElement('div');
+            el.className = `${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-3 rounded-lg shadow-lg mb-2`;
+            el.textContent = msg;
+            container.innerHTML = ''; container.appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+        };
+
+        const renderListItem = (item, key) => {
+            const id = item.id;
+            const concepto = item.concepto || 'Sin Concepto';
+            const monto = parseFloat(item.monto) || 0;
+            const pagador = item.pagador || '---';
+            const fecha = item.fecha ? String(item.fecha).split('T')[0] : '---';
+
+            const div = document.createElement('div');
+            div.className = 'bg-white p-4 rounded-lg shadow flex justify-between items-center';
+            div.innerHTML = `
+                <div class="flex-grow">
+                    <p class="font-bold text-gray-800">${concepto} <span class="font-normal text-xs text-gray-500">(${fecha})</span></p>
+                    <p class="text-sm text-gray-600">${pagador}: ${formatCurrency(monto)}</p>
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="openEditModal('${id}', '${key}')" class="text-blue-500 font-medium">Editar</button>
+                    <button onclick="handleDelete('${id}', '${key}')" class="text-red-500 font-medium px-2">X</button>
+                </div>`;
+            return div;
+        };
+
+        const updateUI = () => {
+            document.getElementById('daily-list').innerHTML = '';
+            state.daily.slice().reverse().slice(0, 15).forEach(i => document.getElementById('daily-list').appendChild(renderListItem(i, 'DAILY')));
+            
+            document.getElementById('monthly-list').innerHTML = '';
+            state.monthly.slice().reverse().forEach(i => document.getElementById('monthly-list').appendChild(renderListItem(i, 'MONTHLY')));
+
+            document.getElementById('jcOnly-list').innerHTML = '';
+            state.jcOnly.slice().reverse().forEach(i => document.getElementById('jcOnly-list').appendChild(renderListItem(i, 'JC_ONLY')));
+
+            const bV = document.getElementById('balance-view');
+            const j = parseFloat(state.balance.juan) || 0;
+            const t = parseFloat(state.balance.tania) || 0;
+            let msg = j < 0 ? `Juan debe ${formatCurrency(Math.abs(j))} a Tania` : `Tania debe ${formatCurrency(Math.abs(t))} a Juan`;
+            if(j === 0 && t === 0) msg = "Balance en cero";
+            bV.innerHTML = `<p class="text-xl font-bold">${msg}</p><p class="text-sm text-gray-500 mt-2">Juan: ${formatCurrency(j)} | Tania: ${formatCurrency(t)}</p>`;
+        };
+
+        const sendRequest = async (payload) => {
+            const url = payload ? `${GAS_URL}?payload=${encodeURIComponent(JSON.stringify(payload))}` : GAS_URL;
+            const res = await fetch(url);
+            const data = await res.json();
+            if (data.success === false) throw new Error(data.error);
+            return data;
+        };
+
+        const loadData = async () => {
+            try {
+                const data = await sendRequest(null);
+                state.categories = data.CATEGORIES_FROM_SHEETS;
+                state.daily = data.daily; state.monthly = data.monthly; state.jcOnly = data.jcOnly;
+                state.balance = data.balance;
+                updateUI();
+                setupAutocomplete(state.activeTab);
+            } catch (e) { showNotification("Error cargando datos", "error"); }
+        };
+
+        const setupAutocomplete = (tabId) => {
+            const key = SHEET_KEYS[tabId];
+            const list = document.getElementById(`${tabId.toLowerCase().replace(' ', '')}-suggestions`) || document.getElementById('edit-suggestions');
+            if (!list) return;
+            list.innerHTML = '';
+            (state.categories[key] || []).forEach(c => {
+                const opt = document.createElement('option'); opt.value = c; list.appendChild(opt);
+            });
+        };
+
+        const handleForm = async (e, key) => {
+            e.preventDefault();
+            if (state.isSubmitting) return;
+            const fd = new FormData(e.target);
+            const concepto = fd.get('concepto').trim().toUpperCase();
+            
+            if (!(state.categories[key] || []).includes(concepto)) {
+                return showNotification(`"${concepto}" no es válido.`, "error");
+            }
+
+            state.isSubmitting = true;
+            try {
+                await sendRequest({ action: 'REGISTER', sheetKey: key, data: { ...Object.fromEntries(fd), concepto, monto: parseFloat(fd.get('monto')) } });
+                e.target.reset(); 
+                e.target.querySelector('input[type="date"]').value = new Date().toISOString().split('T')[0];
+                await loadData();
+                showNotification("¡Registrado!", "success");
+            } catch (e) { showNotification("Error al registrar", "error"); }
+            finally { state.isSubmitting = false; }
+        };
+
+        window.handleDelete = async (id, key) => {
+            if (!confirm("¿Eliminar este gasto?")) return;
+            try {
+                await sendRequest({ action: 'DELETE', sheetKey: key, data: { id } });
+                await loadData();
+                showNotification("Eliminado", "success");
+            } catch (e) { showNotification("Error al eliminar", "error"); }
+        };
+
+        window.openEditModal = (id, key) => {
+            const list = key === 'DAILY' ? state.daily : key === 'MONTHLY' ? state.monthly : state.jcOnly;
+            const item = list.find(i => String(i.id) === String(id));
+            if (!item) return;
+
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-sheet-key').value = key;
+            document.getElementById('edit-concepto').value = item.concepto;
+            document.getElementById('edit-monto').value = item.monto;
+            document.getElementById('edit-fecha').value = item.fecha ? String(item.fecha).split('T')[0] : '';
+            document.getElementById('edit-pagador').value = item.pagador;
+            document.getElementById('edit-observacion').value = item.observacion || '';
+            
+            setupAutocomplete(Object.keys(SHEET_KEYS).find(k => SHEET_KEYS[k] === key));
+            document.getElementById('edit-modal').classList.remove('hidden');
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            document.querySelectorAll('input[type="date"]').forEach(i => i.value = new Date().toISOString().split('T')[0]);
+
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tab = btn.dataset.tab;
+                    state.activeTab = tab;
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                    document.getElementById(`tab-${tab}`).classList.remove('hidden');
+                    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active-tab'));
+                    btn.classList.add('active-tab');
+                    setupAutocomplete(tab);
+                });
+            });
+
+            // Forzar datalist al clic
+            document.querySelectorAll('input[list]').forEach(el => {
+                el.addEventListener('click', () => { el.value = ''; });
+            });
+
+            document.getElementById('form-DIARIOS').onsubmit = (e) => handleForm(e, 'DAILY');
+            document.getElementById('form-MENSUAL').onsubmit = (e) => handleForm(e, 'MONTHLY');
+            document.getElementById('form-SOLO JC').onsubmit = (e) => handleForm(e, 'JC_ONLY');
+            document.getElementById('close-modal-btn').onclick = () => document.getElementById('edit-modal').classList.add('hidden');
+            
+            document.getElementById('edit-form').onsubmit = async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const key = fd.get('sheetKey');
+                try {
+                    await sendRequest({ action: 'EDIT', sheetKey: key, data: Object.fromEntries(fd) });
+                    document.getElementById('edit-modal').classList.add('hidden');
+                    await loadData();
+                    showNotification("Actualizado", "success");
+                } catch(e) { showNotification("Error al editar", "error"); }
+            };
+
+            document.querySelectorAll('select[name="pagador"]').forEach(s => {
+                PAYERS.forEach(p => { const o = document.createElement('option'); o.value = p; o.textContent = p; s.appendChild(o); });
+            });
+
+            document.querySelector('[data-tab="DIARIOS"]').click();
+        });
+    </script>
+</body>
+</html>
 
