@@ -6,21 +6,20 @@
     <title>Finanzas G.G.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .active-tab { color: #2563eb; border-bottom: 2px solid #2563eb; }
-        input:focus::placeholder { color: transparent; }
+        .active-tab { color: #2563eb; border-bottom: 3px solid #2563eb; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col font-sans text-gray-900">
 
     <div id="notification-container" class="fixed top-4 inset-x-0 flex flex-col items-center z-50 pointer-events-none"></div>
 
-    <nav class="sticky top-0 bg-white shadow-sm z-10">
+    <nav class="sticky top-0 bg-white shadow-md z-10">
         <div class="max-w-4xl mx-auto px-2">
             <div class="flex justify-around h-14">
-                <button data-tab="DIARIOS" class="tab-button py-4 px-1 text-xs font-bold transition-all">DIARIOS</button>
-                <button data-tab="MENSUAL" class="tab-button py-4 px-1 text-xs font-bold transition-all">MENSUAL</button>
-                <button data-tab="SOLO JC" class="tab-button py-4 px-1 text-xs font-bold transition-all">SOLO JC</button>
-                <button data-tab="BALANCE" class="tab-button py-4 px-1 text-xs font-bold transition-all">BALANCE</button>
+                <button data-tab="DIARIOS" class="tab-button py-4 px-1 text-xs font-black transition-all">DIARIOS</button>
+                <button data-tab="MENSUAL" class="tab-button py-4 px-1 text-xs font-black transition-all">MENSUAL</button>
+                <button data-tab="SOLO JC" class="tab-button py-4 px-1 text-xs font-black transition-all">SOLO JC</button>
+                <button data-tab="BALANCE" class="tab-button py-4 px-1 text-xs font-black transition-all">BALANCE</button>
             </div>
         </div>
     </nav>
@@ -28,92 +27,81 @@
     <main class="flex-grow max-w-4xl mx-auto w-full p-4">
         <div id="tab-container">
             <div id="content-forms">
-                <form id="main-form" class="bg-white p-5 rounded-xl shadow-sm mb-6">
-                    <h2 id="form-title" class="text-xl font-bold mb-4 text-blue-800">Cargando...</h2>
-                    
+                <form id="main-form" class="bg-white p-6 rounded-3xl shadow-sm mb-6 border border-gray-100">
+                    <h2 id="form-title" class="text-xl font-black mb-4 text-blue-800 uppercase">Cargando...</h2>
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-semibold text-gray-600">Concepto</label>
+                            <label class="block text-xs font-bold text-gray-400 uppercase ml-1">Concepto</label>
                             <input type="text" id="input-concepto" name="concepto" required autocomplete="off" 
-                                   oninput="this.value = this.value.toUpperCase()"
-                                   placeholder="Toca para ver opciones..."
-                                   class="mt-1 block w-full border border-gray-300 rounded-lg p-3 text-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                                   oninput="this.value = this.value.toUpperCase()" list="concept-list"
+                                   placeholder="Selecciona o escribe..."
+                                   class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg focus:border-blue-500 outline-none transition-all">
                             <datalist id="concept-list"></datalist>
                         </div>
-
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-600">Monto ($)</label>
-                                <input type="number" step="0.01" name="monto" required 
-                                       class="mt-1 block w-full border border-gray-300 rounded-lg p-3 text-lg outline-none">
+                                <label class="block text-xs font-bold text-gray-400 uppercase ml-1">Monto ($)</label>
+                                <input type="number" step="0.01" name="monto" required class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg outline-none focus:border-blue-500">
                             </div>
                             <div id="container-pagador">
-                                <label class="block text-sm font-semibold text-gray-600">Pagador</label>
-                                <select id="select-pagador" name="pagador" class="mt-1 block w-full border border-gray-300 rounded-lg p-3 text-lg outline-none bg-white">
+                                <label class="block text-xs font-bold text-gray-400 uppercase ml-1">Pagador</label>
+                                <select name="pagador" class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg outline-none bg-white focus:border-blue-500">
                                     <option value="Juan">Juan</option>
                                     <option value="Tania">Tania</option>
                                 </select>
                             </div>
                         </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-600">Fecha</label>
-                            <input type="date" id="input-fecha" name="fecha" required 
-                                   class="mt-1 block w-full border border-gray-300 rounded-lg p-3 outline-none">
+                        <input type="date" id="input-fecha" name="fecha" required class="w-full border-2 border-gray-100 rounded-2xl p-4 outline-none focus:border-blue-500">
+                        <div id="container-obs" class="hidden">
+                            <input type="text" name="observacion" placeholder="Nota..." class="w-full border-2 border-gray-100 rounded-2xl p-4 outline-none">
                         </div>
-
-                        <div id="container-obs">
-                            <label class="block text-sm font-semibold text-gray-600">Observación</label>
-                            <input type="text" name="observacion" placeholder="Opcional..."
-                                   class="mt-1 block w-full border border-gray-300 rounded-lg p-3 outline-none">
-                        </div>
-
-                        <button type="submit" id="btn-submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg shadow-lg hover:bg-blue-700 transition-colors">
-                            Guardar Gasto
-                        </button>
+                        <button type="submit" id="btn-submit" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all uppercase mt-2">Guardar</button>
                     </div>
                 </form>
-
-                <h3 class="font-bold text-gray-500 mb-3 uppercase tracking-wider text-sm">Últimos movimientos</h3>
-                <div id="items-list" class="space-y-3"></div>
+                <div id="items-list" class="space-y-3 pb-10"></div>
             </div>
 
-            <div id="tab-BALANCE" class="hidden">
-                <h2 class="text-2xl font-bold mb-4">Resumen de Gastos</h2>
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="bg-white p-4 rounded-xl shadow-sm border-b-4 border-blue-400">
-                        <p class="text-xs font-bold text-gray-400 uppercase">Pagado por Juan</p>
-                        <p id="total-juan" class="text-xl font-black text-gray-800">$ 0</p>
+            <div id="tab-BALANCE" class="hidden space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white p-5 rounded-3xl shadow-sm border-l-4 border-blue-500">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase">Juan (Compartido)</p>
+                        <p id="total-juan" class="text-lg font-black">$ 0</p>
                     </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border-b-4 border-pink-400">
-                        <p class="text-xs font-bold text-gray-400 uppercase">Pagado por Tania</p>
-                        <p id="total-tania" class="text-xl font-black text-gray-800">$ 0</p>
+                    <div class="bg-white p-5 rounded-3xl shadow-sm border-l-4 border-pink-500">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase">Tania (Compartido)</p>
+                        <p id="total-tania" class="text-lg font-black">$ 0</p>
                     </div>
                 </div>
-                <div id="balance-card" class="bg-white p-8 rounded-2xl shadow-md text-center border-t-8 border-green-500">
-                    <p class="text-sm font-bold text-gray-400 uppercase mb-2">Resultado Final</p>
-                    <div id="balance-main-msg" class="text-2xl font-black mb-4 text-blue-900 italic">Cargando...</div>
+                <div class="bg-gradient-to-r from-pink-500 to-pink-600 p-6 rounded-3xl shadow-lg text-white">
+                    <p class="text-[10px] font-bold opacity-80 uppercase mb-1">Deuda Juan 100% (Solo JC)</p>
+                    <p id="total-jc" class="text-3xl font-black tracking-tighter">$ 0</p>
+                    <p class="text-[9px] mt-1 italic opacity-90">* Este monto se suma a lo que Juan debe pagar a Tania</p>
+                </div>
+                <div class="bg-white p-10 rounded-[2.5rem] shadow-xl text-center border-2 border-gray-50">
+                    <p class="text-xs font-bold text-gray-300 uppercase mb-3">Balance Final</p>
+                    <p id="balance-main-msg" class="text-2xl font-black text-gray-800 leading-tight uppercase tracking-tighter italic">Cargando...</p>
                 </div>
             </div>
         </div>
     </main>
 
-    <div id="edit-modal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <h3 class="text-xl font-bold mb-4">Modificar Registro</h3>
+    <div id="edit-modal" class="fixed inset-0 bg-black/70 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl">
+            <h3 class="text-xl font-black mb-6 uppercase text-blue-900">Editar Gasto</h3>
             <form id="edit-form" class="space-y-4">
-                <input type="hidden" name="id">
-                <input type="hidden" name="sheetKey">
-                <input type="text" name="concepto" required list="edit-suggestions" oninput="this.value = this.value.toUpperCase()" class="w-full border p-3 rounded-lg">
-                <datalist id="edit-suggestions"></datalist>
-                <div class="grid grid-cols-2 gap-2">
-                    <input type="number" step="0.01" name="monto" required class="border p-3 rounded-lg">
-                    <input type="date" name="fecha" required class="border p-3 rounded-lg">
+                <input type="hidden" name="id"><input type="hidden" name="sheetKey">
+                <input type="text" name="concepto" required list="concept-list" oninput="this.value = this.value.toUpperCase()" class="w-full border-2 border-gray-100 p-4 rounded-2xl outline-none">
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="number" step="0.01" name="monto" required class="border-2 border-gray-100 p-4 rounded-2xl">
+                    <input type="date" name="fecha" required class="border-2 border-gray-100 p-4 rounded-2xl">
                 </div>
-                <select name="pagador" class="w-full border p-3 rounded-lg"><option value="Juan">Juan</option><option value="Tania">Tania</option></select>
-                <div class="flex space-x-2">
-                    <button type="button" onclick="closeModal()" class="flex-1 py-3 bg-gray-100 rounded-lg">Cancelar</button>
-                    <button type="submit" class="flex-1 py-3 bg-green-600 text-white font-bold rounded-lg">Actualizar</button>
+                <select name="pagador" class="w-full border-2 border-gray-100 p-4 rounded-2xl bg-white">
+                    <option value="Juan">Juan</option>
+                    <option value="Tania">Tania</option>
+                </select>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeModal()" class="flex-1 py-4 bg-gray-50 font-bold rounded-2xl text-gray-400">Cerrar</button>
+                    <button type="submit" class="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-lg">Listo</button>
                 </div>
             </form>
         </div>
@@ -121,103 +109,71 @@
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwl47P5DhisrGNIhU3SFDVDn6WoIe6RbrTe_txrjZl8QIJbIxiahkr1d9UVurqJHWgtoQ/exec";
-        
-        const state = {
-            activeTab: 'DIARIOS',
-            sheetMap: { 'DIARIOS': 'DAILY', 'MENSUAL': 'MONTHLY', 'SOLO JC': 'JC_ONLY' },
-            data: { DAILY: [], MONTHLY: [], JC_ONLY: [] },
-            categories: { DAILY: [], MONTHLY: [], JC_ONLY: [] },
-            balance: { juan: 0, tania: 0, totalJuan: 0, totalTania: 0 }
-        };
+        const state = { activeTab: 'DIARIOS', data: {}, categories: {}, balance: {} };
+        const format = (v) => '$ ' + new Intl.NumberFormat('es-UY').format(v || 0);
 
-        const notify = (m, t = 'success') => {
-            const c = document.getElementById('notification-container');
-            const e = document.createElement('div');
-            e.className = `px-6 py-3 rounded-full shadow-xl mb-2 text-white font-bold transition-all transform translate-y-0 ${t === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
-            e.textContent = m;
-            c.appendChild(e);
-            setTimeout(() => e.remove(), 3000);
-        };
-
-        // MONEDA CORREGIDA A PESOS ($)
-        const formatMoney = (v) => {
-            return '$ ' + new Intl.NumberFormat('es-UY', { minimumFractionDigits: 0 }).format(v);
-        };
-
-        async function api(payload = null) {
-            const url = payload ? `${GAS_URL}?payload=${encodeURIComponent(JSON.stringify(payload))}` : GAS_URL;
-            const res = await fetch(url);
-            const d = await res.json();
-            if (d.success === false) throw new Error(d.error);
-            return d;
+        async function api(p = null) {
+            const url = p ? `${GAS_URL}?payload=${encodeURIComponent(JSON.stringify(p))}` : GAS_URL;
+            const r = await fetch(url);
+            return await r.json();
         }
 
         async function refresh() {
             try {
                 const d = await api();
-                state.data.DAILY = d.daily || [];
-                state.data.MONTHLY = d.monthly || [];
-                state.data.JC_ONLY = d.jcOnly || [];
-                state.categories = d.CATEGORIES_FROM_SHEETS || {};
-                state.balance = d.balance || { juan: 0, tania: 0, totalJuan: 0, totalTania: 0 };
+                state.data = { DAILY: d.daily, MONTHLY: d.monthly, JC_ONLY: d.jcOnly };
+                state.categories = d.CATEGORIES_FROM_SHEETS;
+                state.balance = d.balance;
                 render();
-            } catch (e) { notify("Error de conexión", "error"); }
+            } catch(e) { console.error(e); }
         }
 
         function render() {
-            const key = state.sheetMap[state.activeTab];
+            const keyMap = { 'DIARIOS': 'DAILY', 'MENSUAL': 'MONTHLY', 'SOLO JC': 'JC_ONLY' };
+            const key = keyMap[state.activeTab];
             
             if (state.activeTab === 'BALANCE') {
                 document.getElementById('content-forms').classList.add('hidden');
                 document.getElementById('tab-BALANCE').classList.remove('hidden');
                 
+                document.getElementById('total-juan').textContent = format(state.balance.totalJuan);
+                document.getElementById('total-tania').textContent = format(state.balance.totalTania);
+                document.getElementById('total-jc').textContent = format(state.balance.soloJc);
+                
                 const j = state.balance.juan;
-                const tj = state.balance.totalJuan;
-                const tt = state.balance.totalTania;
-
-                document.getElementById('total-juan').textContent = formatMoney(tj);
-                document.getElementById('total-tania').textContent = formatMoney(tt);
-                
                 let msg = "Cuentas al día";
-                if (j > 0.01) msg = `Tania le debe ${formatMoney(Math.abs(j))} a Juan`;
-                else if (j < -0.01) msg = `Juan le debe ${formatMoney(Math.abs(j))} a Tania`;
-                
+                if (j > 0.1) msg = `Tania le debe ${format(j)} a Juan`;
+                else if (j < -0.1) msg = `Juan le debe ${format(Math.abs(j))} a Tania`;
                 document.getElementById('balance-main-msg').textContent = msg;
             } else {
                 document.getElementById('content-forms').classList.remove('hidden');
                 document.getElementById('tab-BALANCE').classList.add('hidden');
-                
-                document.getElementById('form-title').textContent = `Nuevo Gasto: ${state.activeTab}`;
-                document.getElementById('container-pagador').style.display = (state.activeTab === 'SOLO JC') ? 'none' : 'block';
-                document.getElementById('container-obs').style.display = (state.activeTab === 'DIARIOS') ? 'block' : 'none';
+                document.getElementById('form-title').textContent = state.activeTab;
+                document.getElementById('container-pagador').style.display = state.activeTab === 'SOLO JC' ? 'none' : 'block';
+                document.getElementById('container-obs').classList.toggle('hidden', state.activeTab !== 'DIARIOS');
                 
                 const dl = document.getElementById('concept-list');
                 dl.innerHTML = '';
-                const cats = state.categories[key] || [];
-                cats.forEach(c => { const o = document.createElement('option'); o.value = c; dl.appendChild(o); });
+                (state.categories[key] || []).forEach(c => { const o = document.createElement('option'); o.value = c; dl.appendChild(o); });
 
                 const list = document.getElementById('items-list');
                 list.innerHTML = '';
-                const items = [...(state.data[key] || [])].reverse().slice(0, 15);
-                
-                items.forEach(item => {
-                    const row = document.createElement('div');
-                    row.className = "bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4 border-blue-500";
-                    
-                    const pagadorNombre = item.pagador || '---';
-                    const fechaTexto = item.fecha ? String(item.fecha).split('T')[0] : '---';
-                    
-                    row.innerHTML = `
-                        <div>
-                            <div class="font-black text-gray-800">${item.concepto}</div>
-                            <div class="text-xs text-gray-400 font-bold">${fechaTexto} | ${pagadorNombre}</div>
+                [...(state.data[key] || [])].reverse().slice(0, 15).forEach(item => {
+                    const d = document.createElement('div');
+                    d.className = "bg-white p-5 rounded-2xl shadow-sm flex justify-between items-center border border-gray-50";
+                    d.innerHTML = `
+                        <div class="flex-grow">
+                            <div class="font-black text-gray-800 text-sm">${item.concepto || 'GASTO'}</div>
+                            <div class="text-[10px] font-bold text-gray-300 uppercase">
+                                ${item.fecha ? String(item.fecha).split('T')[0] : ''} | <span class="text-blue-500">${item.pagador || 'JUAN'}</span>
+                            </div>
                         </div>
-                        <div class="flex items-center space-x-4">
-                            <div class="font-bold text-blue-600">${formatMoney(item.monto)}</div>
-                            <button onclick="openEdit('${item.id}', '${key}')" class="text-gray-200 hover:text-blue-500 transition-colors px-1">✎</button>
-                            <button onclick="del('${item.id}', '${key}')" class="text-gray-200 hover:text-red-500 transition-colors px-1">✕</button>
+                        <div class="flex items-center gap-3">
+                            <div class="font-black text-gray-800">${format(item.monto)}</div>
+                            <button onclick="openEdit('${item.id}','${key}')" class="bg-gray-100 p-3 rounded-xl text-blue-600 font-black">✎</button>
+                            <button onclick="del('${item.id}','${key}')" class="bg-gray-50 p-3 rounded-xl text-red-300">✕</button>
                         </div>`;
-                    list.appendChild(row);
+                    list.appendChild(d);
                 });
             }
         }
@@ -225,77 +181,43 @@
         document.getElementById('main-form').onsubmit = async (e) => {
             e.preventDefault();
             const fd = new FormData(e.target);
-            const key = state.sheetMap[state.activeTab];
-            const concepto = fd.get('concepto').trim().toUpperCase();
-
-            if (!(state.categories[key] || []).includes(concepto)) {
-                return notify("Concepto no válido", "error");
-            }
-
-            try {
-                document.getElementById('btn-submit').disabled = true;
-                document.getElementById('btn-submit').textContent = "Guardando...";
-                await api({ action: 'REGISTER', sheetKey: key, data: { ...Object.fromEntries(fd), concepto } });
-                e.target.reset();
-                document.getElementById('input-fecha').value = new Date().toISOString().split('T')[0];
-                notify("¡Guardado!");
-                await refresh();
-            } catch (e) { notify("Error", "error"); }
-            finally { 
-                document.getElementById('btn-submit').disabled = false; 
-                document.getElementById('btn-submit').textContent = "Guardar Gasto";
-            }
-        };
-
-        window.del = async (id, key) => {
-            if (!confirm("¿Eliminar?")) return;
-            try {
-                await api({ action: 'DELETE', sheetKey: key, data: { id } });
-                notify("Eliminado");
-                await refresh();
-            } catch (e) { notify("Error", "error"); }
+            const key = { 'DIARIOS': 'DAILY', 'MENSUAL': 'MONTHLY', 'SOLO JC': 'JC_ONLY' }[state.activeTab];
+            const btn = document.getElementById('btn-submit');
+            btn.disabled = true; btn.textContent = "GUARDANDO...";
+            await api({ action: 'REGISTER', sheetKey: key, data: Object.fromEntries(fd) });
+            e.target.reset(); 
+            document.getElementById('input-fecha').value = new Date().toISOString().split('T')[0];
+            await refresh(); btn.disabled = false; btn.textContent = "GUARDAR";
         };
 
         window.openEdit = (id, key) => {
             const item = state.data[key].find(i => String(i.id) === String(id));
-            if (!item) return;
             const f = document.getElementById('edit-form');
-            f.id.value = id; f.sheetKey.value = key;
-            f.concepto.value = item.concepto;
-            f.monto.value = item.monto;
-            f.fecha.value = item.fecha ? String(item.fecha).split('T')[0] : '';
-            f.pagador.value = item.pagador;
+            f.id.value = id; f.sheetKey.value = key; f.concepto.value = item.concepto;
+            f.monto.value = item.monto; f.fecha.value = item.fecha ? String(item.fecha).split('T')[0] : '';
+            f.pagador.value = item.pagador || 'Juan';
             document.getElementById('edit-modal').classList.remove('hidden');
         };
 
         window.closeModal = () => document.getElementById('edit-modal').classList.add('hidden');
-
+        window.del = async (id, key) => { if(confirm("¿Eliminar?")) { await api({ action: 'DELETE', sheetKey: key, data: {id} }); refresh(); } };
+        
         document.getElementById('edit-form').onsubmit = async (e) => {
             e.preventDefault();
-            const fd = new FormData(e.target);
-            try {
-                await api({ action: 'EDIT', sheetKey: fd.get('sheetKey'), data: Object.fromEntries(fd) });
-                closeModal(); notify("Actualizado"); await refresh();
-            } catch (e) { notify("Error", "error"); }
+            await api({ action: 'EDIT', sheetKey: e.target.sheetKey.value, data: Object.fromEntries(new FormData(e.target)) });
+            closeModal(); refresh();
         };
 
         document.querySelectorAll('.tab-button').forEach(b => {
             b.onclick = () => {
                 state.activeTab = b.dataset.tab;
                 document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active-tab'));
-                b.classList.add('active-tab');
-                render();
+                b.classList.add('active-tab'); render();
             };
         });
 
         document.getElementById('input-fecha').value = new Date().toISOString().split('T')[0];
         document.querySelector('[data-tab="DIARIOS"]').click();
-        
-        document.getElementById('input-concepto').onfocus = function() {
-            this.placeholder = "";
-            if (!this.value) { this.value = ' '; this.value = ''; } 
-        };
-
         refresh();
     </script>
 </body>
