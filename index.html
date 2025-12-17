@@ -7,8 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .active-tab { color: #2563eb; border-bottom: 3px solid #2563eb; }
-        .bg-juan { background-color: #dbeafe; color: #1e40af; } /* Azul claro / Texto azul oscuro */
-        .bg-tania { background-color: #fce7f3; color: #9d174d; } /* Rosa claro / Texto rosa oscuro */
+        .bg-juan { background-color: #dbeafe; color: #1e40af; }
+        .bg-tania { background-color: #fce7f3; color: #9d174d; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col font-sans text-gray-900">
@@ -28,13 +28,13 @@
         <div id="tab-container">
             <div id="content-forms">
                 <form id="main-form" class="bg-white p-6 rounded-3xl shadow-sm mb-6 border border-gray-100">
-                    <h2 id="form-title" class="text-xl font-black mb-4 text-blue-800 uppercase text-center tracking-widest">Cargando...</h2>
+                    <h2 id="form-title" class="text-xl font-black mb-4 text-blue-800 uppercase text-center tracking-widest italic">Cargando...</h2>
                     <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-400 uppercase ml-1">Concepto</label>
                             <input type="text" id="input-concepto" name="concepto" required autocomplete="off" 
                                    oninput="this.value = this.value.toUpperCase()" list="concept-list"
-                                   placeholder="¿En qué se gastó?"
+                                   placeholder="Escribe el gasto..."
                                    class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg focus:border-blue-500 outline-none transition-all">
                             <datalist id="concept-list"></datalist>
                         </div>
@@ -52,9 +52,6 @@
                             </div>
                         </div>
                         <input type="date" id="input-fecha" name="fecha" required class="w-full border-2 border-gray-100 rounded-2xl p-4 outline-none focus:border-blue-500">
-                        <div id="container-obs" class="hidden">
-                            <input type="text" name="observacion" placeholder="Nota..." class="w-full border-2 border-gray-100 rounded-2xl p-4 outline-none">
-                        </div>
                         <button type="submit" id="btn-submit" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all uppercase mt-2">Guardar Gasto</button>
                     </div>
                 </form>
@@ -72,7 +69,7 @@
                         <p id="total-tania" class="text-lg font-black tracking-tight">$ 0</p>
                     </div>
                 </div>
-                <div class="bg-gradient-to-r from-pink-500 to-pink-600 p-6 rounded-3xl shadow-lg text-white">
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-3xl shadow-lg text-white">
                     <p class="text-[10px] font-bold opacity-80 uppercase mb-1">Deuda Juan (Solo JC)</p>
                     <p id="total-jc" class="text-3xl font-black tracking-tighter">$ 0</p>
                     <p class="text-[9px] mt-1 italic opacity-90">* Pagado por Tania para Juan (100% Juan)</p>
@@ -84,28 +81,6 @@
             </div>
         </div>
     </main>
-
-    <div id="edit-modal" class="fixed inset-0 bg-black/70 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl">
-            <h3 class="text-xl font-black mb-6 uppercase text-blue-900">Editar Gasto</h3>
-            <form id="edit-form" class="space-y-4">
-                <input type="hidden" name="id"><input type="hidden" name="sheetKey">
-                <input type="text" name="concepto" required list="concept-list" oninput="this.value = this.value.toUpperCase()" class="w-full border-2 border-gray-100 p-4 rounded-2xl outline-none">
-                <div class="grid grid-cols-2 gap-3">
-                    <input type="number" step="0.01" name="monto" required class="border-2 border-gray-100 p-4 rounded-2xl">
-                    <input type="date" name="fecha" required class="border-2 border-gray-100 p-4 rounded-2xl">
-                </div>
-                <select name="pagador" class="w-full border-2 border-gray-100 p-4 rounded-2xl bg-white">
-                    <option value="Juan">Juan</option>
-                    <option value="Tania">Tania</option>
-                </select>
-                <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="closeModal()" class="flex-1 py-4 bg-gray-50 font-bold rounded-2xl text-gray-400">Cerrar</button>
-                    <button type="submit" class="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-lg">Listo</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwl47P5DhisrGNIhU3SFDVDn6WoIe6RbrTe_txrjZl8QIJbIxiahkr1d9UVurqJHWgtoQ/exec";
@@ -146,32 +121,27 @@
                 document.getElementById('tab-BALANCE').classList.add('hidden');
                 document.getElementById('form-title').textContent = state.activeTab;
                 document.getElementById('container-pagador').style.display = state.activeTab === 'SOLO JC' ? 'none' : 'block';
-                document.getElementById('container-obs').classList.toggle('hidden', state.activeTab !== 'DIARIOS');
                 
-                const dl = document.getElementById('concept-list');
-                dl.innerHTML = '';
-                (state.categories[key] || []).forEach(c => { const o = document.createElement('option'); o.value = c; dl.appendChild(o); });
-
                 const list = document.getElementById('items-list');
                 list.innerHTML = '';
                 [...(state.data[key] || [])].reverse().slice(0, 15).forEach(item => {
                     const d = document.createElement('div');
                     d.className = "bg-white p-5 rounded-2xl shadow-sm flex justify-between items-center border border-gray-50";
                     
-                    const pReal = item.pagador || (state.activeTab === 'SOLO JC' ? 'Tania' : 'Juan');
-                    const colorClass = pReal === 'Juan' ? 'bg-juan' : 'bg-tania';
+                    // CORRECCIÓN PUNTO 1: Leer el pagador directamente del objeto del Excel
+                    const pagadorReal = item.pagador || (state.activeTab === 'SOLO JC' ? 'Tania' : '---');
+                    const colorClass = pagadorReal === 'Juan' ? 'bg-juan' : (pagadorReal === 'Tania' ? 'bg-tania' : 'bg-gray-100');
 
                     d.innerHTML = `
                         <div class="flex-grow">
                             <div class="font-black text-gray-800 text-sm">${item.concepto || 'GASTO'}</div>
                             <div class="flex items-center gap-2 mt-1">
-                                <span class="text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${colorClass}">${pReal}</span>
-                                <span class="text-[10px] font-bold text-gray-300">${item.fecha ? String(item.fecha).split('T')[0] : ''}</span>
+                                <span class="text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${colorClass}">${pagadorReal}</span>
+                                <span class="text-[10px] font-bold text-gray-400">${item.fecha ? String(item.fecha).split('T')[0] : ''}</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
                             <div class="font-black text-gray-800 tracking-tighter">${format(item.monto)}</div>
-                            <button onclick="openEdit('${item.id}','${key}')" class="bg-gray-100 p-3 rounded-xl text-blue-600 font-black text-lg">✎</button>
                             <button onclick="del('${item.id}','${key}')" class="bg-gray-50 p-3 rounded-xl text-red-300">✕</button>
                         </div>`;
                     list.appendChild(d);
@@ -192,24 +162,8 @@
             await refresh(); btn.disabled = false; btn.textContent = "Guardar Gasto";
         };
 
-        window.openEdit = (id, key) => {
-            const item = state.data[key].find(i => String(i.id) === String(id));
-            const f = document.getElementById('edit-form');
-            f.id.value = id; f.sheetKey.value = key; f.concepto.value = item.concepto;
-            f.monto.value = item.monto; f.fecha.value = item.fecha ? String(item.fecha).split('T')[0] : '';
-            f.pagador.value = item.pagador || (key === 'JC_ONLY' ? 'Tania' : 'Juan');
-            document.getElementById('edit-modal').classList.remove('hidden');
-        };
-
-        window.closeModal = () => document.getElementById('edit-modal').classList.add('hidden');
         window.del = async (id, key) => { if(confirm("¿Borrar?")) { await api({ action: 'DELETE', sheetKey: key, data: {id} }); refresh(); } };
         
-        document.getElementById('edit-form').onsubmit = async (e) => {
-            e.preventDefault();
-            await api({ action: 'EDIT', sheetKey: e.target.sheetKey.value, data: Object.fromEntries(new FormData(e.target)) });
-            closeModal(); refresh();
-        };
-
         document.querySelectorAll('.tab-button').forEach(b => {
             b.onclick = () => {
                 state.activeTab = b.dataset.tab;
