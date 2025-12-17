@@ -79,10 +79,20 @@
             </div>
 
             <div id="tab-BALANCE" class="hidden">
-                <h2 class="text-2xl font-bold mb-4">Estado de Cuentas</h2>
-                <div id="balance-card" class="bg-white p-8 rounded-2xl shadow-sm text-center">
+                <h2 class="text-2xl font-bold mb-4">Resumen de Gastos</h2>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border-b-4 border-blue-400">
+                        <p class="text-xs font-bold text-gray-400 uppercase">Pagado por Juan</p>
+                        <p id="total-juan" class="text-xl font-black text-gray-800">$ 0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border-b-4 border-pink-400">
+                        <p class="text-xs font-bold text-gray-400 uppercase">Pagado por Tania</p>
+                        <p id="total-tania" class="text-xl font-black text-gray-800">$ 0</p>
+                    </div>
+                </div>
+                <div id="balance-card" class="bg-white p-8 rounded-2xl shadow-md text-center border-t-8 border-green-500">
+                    <p class="text-sm font-bold text-gray-400 uppercase mb-2">Resultado Final</p>
                     <div id="balance-main-msg" class="text-2xl font-black mb-4 text-blue-900 italic">Cargando...</div>
-                    <div id="balance-details" class="text-gray-500 space-y-1"></div>
                 </div>
             </div>
         </div>
@@ -117,7 +127,7 @@
             sheetMap: { 'DIARIOS': 'DAILY', 'MENSUAL': 'MONTHLY', 'SOLO JC': 'JC_ONLY' },
             data: { DAILY: [], MONTHLY: [], JC_ONLY: [] },
             categories: { DAILY: [], MONTHLY: [], JC_ONLY: [] },
-            balance: { juan: 0, tania: 0 }
+            balance: { juan: 0, tania: 0, totalJuan: 0, totalTania: 0 }
         };
 
         const notify = (m, t = 'success') => {
@@ -129,7 +139,10 @@
             setTimeout(() => e.remove(), 3000);
         };
 
-        const formatMoney = (v) => new Intl.NumberFormat('es-UY', { style: 'currency', currency: 'USD' }).format(v);
+        // MONEDA CORREGIDA A PESOS ($)
+        const formatMoney = (v) => {
+            return '$ ' + new Intl.NumberFormat('es-UY', { minimumFractionDigits: 0 }).format(v);
+        };
 
         async function api(payload = null) {
             const url = payload ? `${GAS_URL}?payload=${encodeURIComponent(JSON.stringify(payload))}` : GAS_URL;
@@ -146,7 +159,7 @@
                 state.data.MONTHLY = d.monthly || [];
                 state.data.JC_ONLY = d.jcOnly || [];
                 state.categories = d.CATEGORIES_FROM_SHEETS || {};
-                state.balance = d.balance || { juan: 0, tania: 0 };
+                state.balance = d.balance || { juan: 0, tania: 0, totalJuan: 0, totalTania: 0 };
                 render();
             } catch (e) { notify("Error de conexión", "error"); }
         }
@@ -154,53 +167,61 @@
         function render() {
             const key = state.sheetMap[state.activeTab];
             
-            // UI Switch
             if (state.activeTab === 'BALANCE') {
                 document.getElementById('content-forms').classList.add('hidden');
                 document.getElementById('tab-BALANCE').classList.remove('hidden');
-                const j = state.balance.juan, t = state.balance.tania;
-                const msg = j < 0 ? `Juan le debe ${formatMoney(Math.abs(j))} a Tania` : (t < 0 ? `Tania le debe ${formatMoney(Math.abs(t))} a Juan` : "Cuentas al día");
+                
+                const j = state.balance.juan;
+                const tj = state.balance.totalJuan;
+                const tt = state.balance.totalTania;
+
+                document.getElementById('total-juan').textContent = formatMoney(tj);
+                document.getElementById('total-tania').textContent = formatMoney(tt);
+                
+                let msg = "Cuentas al día";
+                if (j > 0.01) msg = `Tania le debe ${formatMoney(Math.abs(j))} a Juan`;
+                else if (j < -0.01) msg = `Juan le debe ${formatMoney(Math.abs(j))} a Tania`;
+                
                 document.getElementById('balance-main-msg').textContent = msg;
-                document.getElementById('balance-details').innerHTML = `<p>Saldo Juan: ${formatMoney(j)}</p><p>Saldo Tania: ${formatMoney(t)}</p>`;
             } else {
                 document.getElementById('content-forms').classList.remove('hidden');
                 document.getElementById('tab-BALANCE').classList.add('hidden');
                 
-                // Form setup
                 document.getElementById('form-title').textContent = `Nuevo Gasto: ${state.activeTab}`;
                 document.getElementById('container-pagador').style.display = (state.activeTab === 'SOLO JC') ? 'none' : 'block';
                 document.getElementById('container-obs').style.display = (state.activeTab === 'DIARIOS') ? 'block' : 'none';
                 
-                // Datalist setup
                 const dl = document.getElementById('concept-list');
                 dl.innerHTML = '';
                 const cats = state.categories[key] || [];
                 cats.forEach(c => { const o = document.createElement('option'); o.value = c; dl.appendChild(o); });
-                document.getElementById('input-concepto').setAttribute('list', 'concept-list');
 
-                // List render
                 const list = document.getElementById('items-list');
                 list.innerHTML = '';
                 const items = [...(state.data[key] || [])].reverse().slice(0, 15);
+                
                 items.forEach(item => {
                     const row = document.createElement('div');
                     row.className = "bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4 border-blue-500";
+                    
+                    const pagadorNombre = item.pagador || '---';
+                    const fechaTexto = item.fecha ? String(item.fecha).split('T')[0] : '---';
+                    
                     row.innerHTML = `
                         <div>
                             <div class="font-black text-gray-800">${item.concepto}</div>
-                            <div class="text-xs text-gray-400 font-bold">${item.fecha ? item.fecha.split('T')[0] : ''} | ${item.pagador}</div>
+                            <div class="text-xs text-gray-400 font-bold">${fechaTexto} | ${pagadorNombre}</div>
                         </div>
                         <div class="flex items-center space-x-4">
                             <div class="font-bold text-blue-600">${formatMoney(item.monto)}</div>
-                            <button onclick="openEdit('${item.id}', '${key}')" class="text-gray-300 hover:text-blue-500 transition-colors">✎</button>
-                            <button onclick="del('${item.id}', '${key}')" class="text-gray-300 hover:text-red-500 transition-colors">✕</button>
+                            <button onclick="openEdit('${item.id}', '${key}')" class="text-gray-200 hover:text-blue-500 transition-colors px-1">✎</button>
+                            <button onclick="del('${item.id}', '${key}')" class="text-gray-200 hover:text-red-500 transition-colors px-1">✕</button>
                         </div>`;
                     list.appendChild(row);
                 });
             }
         }
 
-        // Acciones
         document.getElementById('main-form').onsubmit = async (e) => {
             e.preventDefault();
             const fd = new FormData(e.target);
@@ -208,43 +229,42 @@
             const concepto = fd.get('concepto').trim().toUpperCase();
 
             if (!(state.categories[key] || []).includes(concepto)) {
-                return notify("Concepto no válido para esta lista", "error");
+                return notify("Concepto no válido", "error");
             }
 
             try {
                 document.getElementById('btn-submit').disabled = true;
-                await api({ action: 'REGISTER', sheetKey: key, data: Object.fromEntries(fd) });
+                document.getElementById('btn-submit').textContent = "Guardando...";
+                await api({ action: 'REGISTER', sheetKey: key, data: { ...Object.fromEntries(fd), concepto } });
                 e.target.reset();
                 document.getElementById('input-fecha').value = new Date().toISOString().split('T')[0];
                 notify("¡Guardado!");
                 await refresh();
-            } catch (e) { notify("Error al guardar", "error"); }
-            finally { document.getElementById('btn-submit').disabled = false; }
+            } catch (e) { notify("Error", "error"); }
+            finally { 
+                document.getElementById('btn-submit').disabled = false; 
+                document.getElementById('btn-submit').textContent = "Guardar Gasto";
+            }
         };
 
         window.del = async (id, key) => {
-            if (!confirm("¿Eliminar registro?")) return;
-            await api({ action: 'DELETE', sheetKey: key, data: { id } });
-            notify("Eliminado");
-            refresh();
+            if (!confirm("¿Eliminar?")) return;
+            try {
+                await api({ action: 'DELETE', sheetKey: key, data: { id } });
+                notify("Eliminado");
+                await refresh();
+            } catch (e) { notify("Error", "error"); }
         };
 
         window.openEdit = (id, key) => {
             const item = state.data[key].find(i => String(i.id) === String(id));
             if (!item) return;
             const f = document.getElementById('edit-form');
-            f.id.value = id;
-            f.sheetKey.value = key;
+            f.id.value = id; f.sheetKey.value = key;
             f.concepto.value = item.concepto;
             f.monto.value = item.monto;
-            f.fecha.value = item.fecha ? item.fecha.split('T')[0] : '';
+            f.fecha.value = item.fecha ? String(item.fecha).split('T')[0] : '';
             f.pagador.value = item.pagador;
-
-            // Setup edit datalist
-            const dl = document.getElementById('edit-suggestions');
-            dl.innerHTML = '';
-            (state.categories[key] || []).forEach(c => { const o = document.createElement('option'); o.value = c; dl.appendChild(o); });
-            
             document.getElementById('edit-modal').classList.remove('hidden');
         };
 
@@ -253,13 +273,12 @@
         document.getElementById('edit-form').onsubmit = async (e) => {
             e.preventDefault();
             const fd = new FormData(e.target);
-            await api({ action: 'EDIT', sheetKey: fd.get('sheetKey'), data: Object.fromEntries(fd) });
-            closeModal();
-            notify("Actualizado");
-            refresh();
+            try {
+                await api({ action: 'EDIT', sheetKey: fd.get('sheetKey'), data: Object.fromEntries(fd) });
+                closeModal(); notify("Actualizado"); await refresh();
+            } catch (e) { notify("Error", "error"); }
         };
 
-        // Tabs
         document.querySelectorAll('.tab-button').forEach(b => {
             b.onclick = () => {
                 state.activeTab = b.dataset.tab;
@@ -269,11 +288,9 @@
             };
         });
 
-        // Inicialización
         document.getElementById('input-fecha').value = new Date().toISOString().split('T')[0];
         document.querySelector('[data-tab="DIARIOS"]').click();
         
-        // Fix for datalist on mobile
         document.getElementById('input-concepto').onfocus = function() {
             this.placeholder = "";
             if (!this.value) { this.value = ' '; this.value = ''; } 
@@ -283,5 +300,6 @@
     </script>
 </body>
 </html>
+
 
 
