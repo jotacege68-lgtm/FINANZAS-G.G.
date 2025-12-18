@@ -73,7 +73,6 @@
                         <p id="total-jc" class="text-lg font-black">$ 0</p>
                     </div>
                 </div>
-                
                 <div class="bg-blue-900 p-8 rounded-[2.5rem] shadow-xl text-center text-white mt-4">
                     <p class="text-[10px] font-bold uppercase opacity-60 mb-2 tracking-widest">Balance Final</p>
                     <p id="balance-main-msg" class="text-xl font-black leading-tight uppercase italic tracking-tighter">Cargando...</p>
@@ -110,22 +109,21 @@
                 document.getElementById('content-forms').classList.add('hidden');
                 document.getElementById('tab-BALANCE').classList.remove('hidden');
                 
-                // Buscar valores ignorando mayúsculas
+                // Normalización de claves del balance
                 const getB = (name) => {
-                    const k = Object.keys(state.balance).find(x => x.toLowerCase() === name.toLowerCase());
+                    const k = Object.keys(state.balance).find(x => x.toLowerCase().trim() === name.toLowerCase().trim());
                     return state.balance[k] || 0;
                 };
 
-                const j = getB('juan');
-                const t = getB('tania');
-                const jc = getB('solo jc');
+                const valJ = getB('juan');
+                const valT = getB('tania');
+                const valJC = getB('solo jc');
 
-                document.getElementById('total-juan').textContent = format(j);
-                document.getElementById('total-tania').textContent = format(t);
-                document.getElementById('total-jc').textContent = format(jc);
+                document.getElementById('total-juan').textContent = format(valJ);
+                document.getElementById('total-tania').textContent = format(valT);
+                document.getElementById('total-jc').textContent = format(valJC);
                 
-                // El balance final (quién debe a quién) usualmente se calcula sobre Juan
-                let msg = j > 0.1 ? `Tania debe ${format(j)} a Juan` : j < -0.1 ? `Juan debe ${format(Math.abs(j))} a Tania` : "Cuentas al día";
+                let msg = valJ > 0.1 ? `Tania debe ${format(valJ)} a Juan` : valJ < -0.1 ? `Juan debe ${format(Math.abs(valJ))} a Tania` : "Cuentas al día";
                 document.getElementById('balance-main-msg').textContent = msg;
             } else {
                 document.getElementById('content-forms').classList.remove('hidden');
@@ -133,10 +131,10 @@
                 document.getElementById('form-title').textContent = state.activeTab;
                 document.getElementById('container-pagador').style.display = state.activeTab === 'SOLO JC' ? 'none' : 'block';
                 
-                // Autocompletado (Punto 3)
                 const dl = document.getElementById('concept-list');
                 dl.innerHTML = '';
-                (state.categories[key] || []).forEach(c => {
+                const currentCats = state.categories[key] || [];
+                currentCats.forEach(c => {
                     const o = document.createElement('option'); o.value = c; dl.appendChild(o);
                 });
 
@@ -144,11 +142,11 @@
                 list.innerHTML = '';
                 
                 [...(state.data[key] || [])].reverse().slice(0, 15).forEach(item => {
-                    // Normalización para visualización (Punto 1)
-                    const pValue = (item.pagador || item.Pagador || "").toLowerCase();
-                    const esJuan = pValue === 'juan' || (state.activeTab !== 'SOLO JC' && pValue !== 'tania');
-                    const colorClass = esJuan ? 'bg-juan' : 'bg-tania';
-                    const nombreLabel = esJuan ? 'Juan' : 'Tania';
+                    // Lógica robusta para detectar pagador
+                    const rawP = (item.pagador || item.Pagador || "").toString().toLowerCase().trim();
+                    const esTania = rawP === 'tania';
+                    const colorClass = esTania ? 'bg-tania' : 'bg-juan';
+                    const nombreLabel = esTania ? 'Tania' : 'Juan';
 
                     const d = document.createElement('div');
                     d.className = "bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center border border-gray-50";
@@ -173,7 +171,15 @@
             e.preventDefault();
             const fd = new FormData(e.target);
             const key = { 'DIARIOS': 'DAILY', 'MENSUAL': 'MONTHLY', 'SOLO JC': 'JC_ONLY' }[state.activeTab];
-            // Si es SOLO JC, forzamos Tania como pagadora
+            
+            // VALIDACIÓN ESTRICTA (Punto 4)
+            const conceptoIngresado = fd.get('concepto').toUpperCase();
+            const listaValida = state.categories[key] || [];
+            if (!listaValida.includes(conceptoIngresado)) {
+                alert(`"${conceptoIngresado}" no es un gasto aceptado. Por favor elige uno de la lista.`);
+                return;
+            }
+
             if(state.activeTab === 'SOLO JC') fd.set('pagador', 'tania');
             const btn = document.getElementById('btn-submit');
             btn.disabled = true; btn.textContent = "GUARDANDO...";
@@ -198,4 +204,4 @@
         refresh();
     </script>
 </body>
-    </html>
+</html>
