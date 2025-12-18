@@ -7,19 +7,19 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .active-tab { color: #2563eb; border-bottom: 3px solid #2563eb; }
-        .bg-juan { background-color: #dbeafe; color: #1e40af; }
-        .bg-tania { background-color: #fce7f3; color: #9d174d; }
+        .bg-juan { background-color: #dbeafe !important; color: #1e40af !important; }
+        .bg-tania { background-color: #fce7f3 !important; color: #9d174d !important; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col font-sans text-gray-900">
+<body class="bg-gray-100 min-h-screen flex flex-col font-sans text-gray-900 text-sm">
 
     <nav class="sticky top-0 bg-white shadow-md z-10">
         <div class="max-w-4xl mx-auto px-2">
-            <div class="flex justify-around h-14">
-                <button data-tab="DIARIOS" class="tab-button py-4 px-1 text-xs font-black transition-all">DIARIOS</button>
-                <button data-tab="MENSUAL" class="tab-button py-4 px-1 text-xs font-black transition-all">MENSUAL</button>
-                <button data-tab="SOLO JC" class="tab-button py-4 px-1 text-xs font-black transition-all">SOLO JC</button>
-                <button data-tab="BALANCE" class="tab-button py-4 px-1 text-xs font-black transition-all">BALANCE</button>
+            <div class="flex justify-around h-14 font-black">
+                <button data-tab="DIARIOS" class="tab-button py-4 px-1 transition-all uppercase">DIARIOS</button>
+                <button data-tab="MENSUAL" class="tab-button py-4 px-1 transition-all uppercase">MENSUAL</button>
+                <button data-tab="SOLO JC" class="tab-button py-4 px-1 transition-all uppercase">SOLO JC</button>
+                <button data-tab="BALANCE" class="tab-button py-4 px-1 transition-all uppercase">BALANCE</button>
             </div>
         </div>
     </nav>
@@ -28,31 +28,31 @@
         <div id="tab-container">
             <div id="content-forms">
                 <form id="main-form" class="bg-white p-6 rounded-3xl shadow-sm mb-6 border border-gray-100">
-                    <h2 id="form-title" class="text-xl font-black mb-4 text-blue-800 uppercase text-center italic tracking-widest">Cargando...</h2>
+                    <h2 id="form-title" class="text-xl font-black mb-4 text-blue-800 uppercase text-center italic tracking-widest">...</h2>
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase ml-1">Concepto</label>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase ml-1">Concepto</label>
                             <input type="text" id="input-concepto" name="concepto" required autocomplete="off" 
                                    oninput="this.value = this.value.toUpperCase()" list="concept-list"
-                                   placeholder="¿Qué compraste?"
+                                   placeholder="Elija un gasto de la lista"
                                    class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg focus:border-blue-500 outline-none transition-all">
                             <datalist id="concept-list"></datalist>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-bold text-gray-400 uppercase ml-1">Monto ($)</label>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase ml-1">Monto ($)</label>
                                 <input type="number" step="0.01" name="monto" required class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg outline-none focus:border-blue-500">
                             </div>
                             <div id="container-pagador">
-                                <label class="block text-xs font-bold text-gray-400 uppercase ml-1">Pagador</label>
-                                <select name="pagador" id="main-select-pagador" class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg outline-none bg-white focus:border-blue-500">
-                                    <option value="Juan">Juan</option>
-                                    <option value="Tania">Tania</option>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase ml-1">Pagador</label>
+                                <select name="pagador" id="main-pagador" class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg outline-none bg-white">
+                                    <option value="juan">Juan</option>
+                                    <option value="tania">Tania</option>
                                 </select>
                             </div>
                         </div>
-                        <input type="date" id="input-fecha" name="fecha" required class="w-full border-2 border-gray-100 rounded-2xl p-4 outline-none focus:border-blue-500">
-                        <button type="submit" id="btn-submit" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all uppercase mt-2">Guardar Gasto</button>
+                        <input type="date" id="input-fecha" name="fecha" required class="w-full border-2 border-gray-100 rounded-2xl p-4 outline-none">
+                        <button type="submit" id="btn-submit" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all uppercase">Guardar Gasto</button>
                     </div>
                 </form>
                 <div id="items-list" class="space-y-3 pb-10"></div>
@@ -61,22 +61,22 @@
             <div id="tab-BALANCE" class="hidden space-y-4">
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-white p-5 rounded-3xl shadow-sm border-l-4 border-blue-500">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase">Juan (Compartido)</p>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase">Juan Compartido</p>
                         <p id="total-juan" class="text-lg font-black">$ 0</p>
                     </div>
                     <div class="bg-white p-5 rounded-3xl shadow-sm border-l-4 border-pink-500">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase">Tania (Compartido)</p>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase">Tania Compartido</p>
                         <p id="total-tania" class="text-lg font-black">$ 0</p>
                     </div>
+                    <div class="bg-white p-5 rounded-3xl shadow-sm border-l-4 border-indigo-600">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase">Deuda Solo JC</p>
+                        <p id="total-jc" class="text-lg font-black">$ 0</p>
+                    </div>
                 </div>
-                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-3xl shadow-lg text-white">
-                    <p class="text-[10px] font-bold opacity-80 uppercase mb-1">Deuda Juan (Solo JC)</p>
-                    <p id="total-jc" class="text-3xl font-black tracking-tighter">$ 0</p>
-                    <p class="text-[9px] mt-1 italic opacity-90">* Pagado por Tania para Juan (100% Juan)</p>
-                </div>
-                <div class="bg-white p-10 rounded-[2.5rem] shadow-xl text-center border-2 border-gray-50">
-                    <p class="text-xs font-bold text-gray-300 uppercase mb-3">Balance Final</p>
-                    <p id="balance-main-msg" class="text-2xl font-black text-gray-800 leading-tight uppercase italic tracking-tighter">Cargando...</p>
+                
+                <div class="bg-blue-900 p-8 rounded-[2.5rem] shadow-xl text-center text-white mt-4">
+                    <p class="text-[10px] font-bold uppercase opacity-60 mb-2 tracking-widest">Balance Final</p>
+                    <p id="balance-main-msg" class="text-xl font-black leading-tight uppercase italic tracking-tighter">Cargando...</p>
                 </div>
             </div>
         </div>
@@ -84,23 +84,20 @@
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwl47P5DhisrGNIhU3SFDVDn6WoIe6RbrTe_txrjZl8QIJbIxiahkr1d9UVurqJHWgtoQ/exec";
-        const state = { activeTab: 'DIARIOS', data: {}, categories: {}, balance: {} };
+        let state = { activeTab: 'DIARIOS', data: {}, balance: {}, categories: {} };
         const format = (v) => '$ ' + new Intl.NumberFormat('es-UY').format(v || 0);
 
         async function api(p = null) {
             const url = p ? `${GAS_URL}?payload=${encodeURIComponent(JSON.stringify(p))}` : GAS_URL;
-            const r = await fetch(url);
-            return await r.json();
+            const r = await fetch(url); return await r.json();
         }
 
         async function refresh() {
             try {
                 const d = await api();
                 state.data = { DAILY: d.daily, MONTHLY: d.monthly, JC_ONLY: d.jcOnly };
-                state.categories = d.CATEGORIES_FROM_SHEETS;
-                // Normalizamos el balance para que no importe Mayúsculas o Minúsculas
-                state.balance = {};
-                for (let key in d.balance) { state.balance[key.toLowerCase()] = d.balance[key]; }
+                state.balance = d.balance;
+                state.categories = d.CATEGORIES_FROM_SHEETS || {};
                 render();
             } catch(e) { console.error(e); }
         }
@@ -113,12 +110,21 @@
                 document.getElementById('content-forms').classList.add('hidden');
                 document.getElementById('tab-BALANCE').classList.remove('hidden');
                 
-                // Buscamos los valores ignorando si es Juan o juan
-                document.getElementById('total-juan').textContent = format(state.balance['juan'] || state.balance['Juan']);
-                document.getElementById('total-tania').textContent = format(state.balance['tania'] || state.balance['Tania']);
-                document.getElementById('total-jc').textContent = format(state.balance['solo jc']);
+                // Buscar valores ignorando mayúsculas
+                const getB = (name) => {
+                    const k = Object.keys(state.balance).find(x => x.toLowerCase() === name.toLowerCase());
+                    return state.balance[k] || 0;
+                };
+
+                const j = getB('juan');
+                const t = getB('tania');
+                const jc = getB('solo jc');
+
+                document.getElementById('total-juan').textContent = format(j);
+                document.getElementById('total-tania').textContent = format(t);
+                document.getElementById('total-jc').textContent = format(jc);
                 
-                const j = parseFloat(state.balance['juan'] || state.balance['Juan'] || 0);
+                // El balance final (quién debe a quién) usualmente se calcula sobre Juan
                 let msg = j > 0.1 ? `Tania debe ${format(j)} a Juan` : j < -0.1 ? `Juan debe ${format(Math.abs(j))} a Tania` : "Cuentas al día";
                 document.getElementById('balance-main-msg').textContent = msg;
             } else {
@@ -127,33 +133,36 @@
                 document.getElementById('form-title').textContent = state.activeTab;
                 document.getElementById('container-pagador').style.display = state.activeTab === 'SOLO JC' ? 'none' : 'block';
                 
+                // Autocompletado (Punto 3)
+                const dl = document.getElementById('concept-list');
+                dl.innerHTML = '';
+                (state.categories[key] || []).forEach(c => {
+                    const o = document.createElement('option'); o.value = c; dl.appendChild(o);
+                });
+
                 const list = document.getElementById('items-list');
                 list.innerHTML = '';
-                const items = state.data[key] || [];
                 
-                [...items].reverse().slice(0, 15).forEach(item => {
-                    const d = document.createElement('div');
-                    d.className = "bg-white p-5 rounded-2xl shadow-sm flex justify-between items-center border border-gray-50";
-                    
-                    // CORRECCIÓN: Tomar el pagador del Excel, si no existe usar Tania para JC o Juan para el resto
-                    let pagadorReal = item.pagador || (state.activeTab === 'SOLO JC' ? 'Tania' : 'Juan');
-                    
-                    // Aseguramos que el nombre tenga la primera letra mayúscula para la comparación
-                    pagadorReal = pagadorReal.charAt(0).toUpperCase() + pagadorReal.slice(1).toLowerCase();
-                    
-                    const colorClass = pagadorReal === 'Juan' ? 'bg-juan' : 'bg-tania';
+                [...(state.data[key] || [])].reverse().slice(0, 15).forEach(item => {
+                    // Normalización para visualización (Punto 1)
+                    const pValue = (item.pagador || item.Pagador || "").toLowerCase();
+                    const esJuan = pValue === 'juan' || (state.activeTab !== 'SOLO JC' && pValue !== 'tania');
+                    const colorClass = esJuan ? 'bg-juan' : 'bg-tania';
+                    const nombreLabel = esJuan ? 'Juan' : 'Tania';
 
+                    const d = document.createElement('div');
+                    d.className = "bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center border border-gray-50";
                     d.innerHTML = `
                         <div class="flex-grow">
-                            <div class="font-black text-gray-800 text-sm">${item.concepto || 'GASTO'}</div>
+                            <div class="font-black text-gray-800 uppercase text-xs">${item.concepto || item.Concepto || 'GASTO'}</div>
                             <div class="flex items-center gap-2 mt-1">
-                                <span class="text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${colorClass}">${pagadorReal}</span>
-                                <span class="text-[10px] font-bold text-gray-400">${item.fecha ? String(item.fecha).split('T')[0] : ''}</span>
+                                <span class="text-[8px] font-black px-2 py-0.5 rounded-full uppercase ${colorClass}">${nombreLabel}</span>
+                                <span class="text-[9px] font-bold text-gray-300">${item.fecha ? item.fecha.split('T')[0] : ''}</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
-                            <div class="font-black text-gray-800 tracking-tighter">${format(item.monto)}</div>
-                            <button onclick="del('${item.id}','${key}')" class="bg-gray-50 p-3 rounded-xl text-red-300">✕</button>
+                            <div class="font-black text-gray-800">${format(item.monto || item.Monto)}</div>
+                            <button onclick="del('${item.id}','${key}')" class="bg-gray-50 p-2 rounded-lg text-red-200">✕</button>
                         </div>`;
                     list.appendChild(d);
                 });
@@ -164,7 +173,8 @@
             e.preventDefault();
             const fd = new FormData(e.target);
             const key = { 'DIARIOS': 'DAILY', 'MENSUAL': 'MONTHLY', 'SOLO JC': 'JC_ONLY' }[state.activeTab];
-            if(state.activeTab === 'SOLO JC') fd.set('pagador', 'Tania');
+            // Si es SOLO JC, forzamos Tania como pagadora
+            if(state.activeTab === 'SOLO JC') fd.set('pagador', 'tania');
             const btn = document.getElementById('btn-submit');
             btn.disabled = true; btn.textContent = "GUARDANDO...";
             await api({ action: 'REGISTER', sheetKey: key, data: Object.fromEntries(fd) });
@@ -188,7 +198,4 @@
         refresh();
     </script>
 </body>
-</html>
-
-
-
+    </html>
