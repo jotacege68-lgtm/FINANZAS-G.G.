@@ -9,6 +9,7 @@
         .active-tab { color: #2563eb; border-bottom: 3px solid #2563eb; }
         .bg-juan { background-color: #dbeafe !important; color: #1e40af !important; }
         .bg-tania { background-color: #fce7f3 !important; color: #9d174d !important; }
+        .editing { border: 2px solid #2563eb !important; background-color: #eff6ff !important; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col font-sans text-gray-900 text-sm">
@@ -27,25 +28,26 @@
     <main class="flex-grow max-w-4xl mx-auto w-full p-4">
         <div id="tab-container">
             <div id="content-forms">
-                <form id="main-form" class="bg-white p-6 rounded-3xl shadow-sm mb-6 border border-gray-100">
-                    <h2 id="form-title" class="text-xl font-black mb-4 text-blue-800 uppercase text-center italic tracking-widest">...</h2>
+                <form id="main-form" class="bg-white p-6 rounded-3xl shadow-sm mb-6 border border-gray-100 transition-all">
+                    <h2 id="form-title" class="text-xl font-black mb-4 text-blue-800 uppercase text-center italic tracking-widest">Cargando...</h2>
+                    <input type="hidden" name="id" id="input-id">
                     <div class="space-y-4">
                         <div>
                             <label class="block text-[10px] font-bold text-gray-400 uppercase ml-1">Concepto</label>
                             <input type="text" id="input-concepto" name="concepto" required autocomplete="off" 
                                    oninput="this.value = this.value.toUpperCase()" list="concept-list"
                                    placeholder="Elija un gasto de la lista"
-                                   class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg focus:border-blue-500 outline-none transition-all">
+                                   class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg focus:border-blue-500 outline-none">
                             <datalist id="concept-list"></datalist>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-400 uppercase ml-1">Monto ($)</label>
-                                <input type="number" step="0.01" name="monto" required class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg outline-none focus:border-blue-500">
+                                <input type="number" step="0.01" name="monto" id="input-monto" required class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg outline-none focus:border-blue-500">
                             </div>
                             <div id="container-pagador">
                                 <label class="block text-[10px] font-bold text-gray-400 uppercase ml-1">Pagador</label>
-                                <select name="pagador" id="main-pagador" class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg outline-none bg-white">
+                                <select name="pagador" id="input-pagador" class="mt-1 block w-full border-2 border-gray-100 rounded-2xl p-4 text-lg outline-none bg-white">
                                     <option value="juan">Juan</option>
                                     <option value="tania">Tania</option>
                                 </select>
@@ -53,6 +55,7 @@
                         </div>
                         <input type="date" id="input-fecha" name="fecha" required class="w-full border-2 border-gray-100 rounded-2xl p-4 outline-none">
                         <button type="submit" id="btn-submit" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all uppercase">Guardar Gasto</button>
+                        <button type="button" id="btn-cancel" onclick="resetForm()" class="hidden w-full bg-gray-200 text-gray-600 font-bold py-2 rounded-xl mt-2 uppercase text-xs">Cancelar Edición</button>
                     </div>
                 </form>
                 <div id="items-list" class="space-y-3 pb-10"></div>
@@ -60,17 +63,17 @@
 
             <div id="tab-BALANCE" class="hidden space-y-4">
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-white p-5 rounded-3xl shadow-sm border-l-4 border-blue-500">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase">Juan Compartido</p>
-                        <p id="total-juan" class="text-lg font-black">$ 0</p>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-blue-500">
+                        <p class="text-[9px] font-bold text-gray-400 uppercase">Juan Compartido</p>
+                        <p id="total-juan" class="text-base font-black">$ 0</p>
                     </div>
-                    <div class="bg-white p-5 rounded-3xl shadow-sm border-l-4 border-pink-500">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase">Tania Compartido</p>
-                        <p id="total-tania" class="text-lg font-black">$ 0</p>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-pink-500">
+                        <p class="text-[9px] font-bold text-gray-400 uppercase">Tania Compartido</p>
+                        <p id="total-tania" class="text-base font-black">$ 0</p>
                     </div>
-                    <div class="bg-white p-5 rounded-3xl shadow-sm border-l-4 border-indigo-600">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase">Deuda Solo JC</p>
-                        <p id="total-jc" class="text-lg font-black">$ 0</p>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-indigo-600">
+                        <p class="text-[9px] font-bold text-gray-400 uppercase">Deuda Solo JC</p>
+                        <p id="total-jc" class="text-base font-black">$ 0</p>
                     </div>
                 </div>
                 <div class="bg-blue-900 p-8 rounded-[2.5rem] shadow-xl text-center text-white mt-4">
@@ -108,23 +111,15 @@
             if (state.activeTab === 'BALANCE') {
                 document.getElementById('content-forms').classList.add('hidden');
                 document.getElementById('tab-BALANCE').classList.remove('hidden');
-                
-                // Normalización de claves del balance
-                const getB = (name) => {
-                    const k = Object.keys(state.balance).find(x => x.toLowerCase().trim() === name.toLowerCase().trim());
+                const getB = (n) => {
+                    const k = Object.keys(state.balance).find(x => x.toLowerCase().trim() === n.toLowerCase().trim());
                     return state.balance[k] || 0;
                 };
-
-                const valJ = getB('juan');
-                const valT = getB('tania');
-                const valJC = getB('solo jc');
-
+                const valJ = getB('juan'), valT = getB('tania'), valJC = getB('solo jc');
                 document.getElementById('total-juan').textContent = format(valJ);
                 document.getElementById('total-tania').textContent = format(valT);
                 document.getElementById('total-jc').textContent = format(valJC);
-                
-                let msg = valJ > 0.1 ? `Tania debe ${format(valJ)} a Juan` : valJ < -0.1 ? `Juan debe ${format(Math.abs(valJ))} a Tania` : "Cuentas al día";
-                document.getElementById('balance-main-msg').textContent = msg;
+                document.getElementById('balance-main-msg').textContent = valJ > 0.1 ? `Tania debe ${format(valJ)} a Juan` : valJ < -0.1 ? `Juan debe ${format(Math.abs(valJ))} a Tania` : "Cuentas al día";
             } else {
                 document.getElementById('content-forms').classList.remove('hidden');
                 document.getElementById('tab-BALANCE').classList.add('hidden');
@@ -133,16 +128,13 @@
                 
                 const dl = document.getElementById('concept-list');
                 dl.innerHTML = '';
-                const currentCats = state.categories[key] || [];
-                currentCats.forEach(c => {
+                (state.categories[key] || []).forEach(c => {
                     const o = document.createElement('option'); o.value = c; dl.appendChild(o);
                 });
 
                 const list = document.getElementById('items-list');
                 list.innerHTML = '';
-                
                 [...(state.data[key] || [])].reverse().slice(0, 15).forEach(item => {
-                    // Lógica robusta para detectar pagador
                     const rawP = (item.pagador || item.Pagador || "").toString().toLowerCase().trim();
                     const esTania = rawP === 'tania';
                     const colorClass = esTania ? 'bg-tania' : 'bg-juan';
@@ -158,8 +150,9 @@
                                 <span class="text-[9px] font-bold text-gray-300">${item.fecha ? item.fecha.split('T')[0] : ''}</span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <div class="font-black text-gray-800">${format(item.monto || item.Monto)}</div>
+                        <div class="flex items-center gap-2">
+                            <div class="font-black text-gray-800 mr-2">${format(item.monto || item.Monto)}</div>
+                            <button onclick="editItem('${item.id}', '${key}')" class="bg-blue-50 p-2 rounded-lg text-blue-400">✏️</button>
                             <button onclick="del('${item.id}','${key}')" class="bg-gray-50 p-2 rounded-lg text-red-200">✕</button>
                         </div>`;
                     list.appendChild(d);
@@ -167,26 +160,54 @@
             }
         }
 
+        window.editItem = (id, key) => {
+            const item = state.data[key].find(i => i.id === id);
+            if (!item) return;
+            document.getElementById('input-id').value = item.id;
+            document.getElementById('input-concepto').value = item.concepto || item.Concepto;
+            document.getElementById('input-monto').value = item.monto || item.Monto;
+            document.getElementById('input-pagador').value = (item.pagador || item.Pagador || "juan").toLowerCase();
+            document.getElementById('input-fecha').value = item.fecha ? item.fecha.split('T')[0] : "";
+            
+            document.getElementById('main-form').classList.add('editing');
+            document.getElementById('btn-submit').textContent = "ACTUALIZAR GASTO";
+            document.getElementById('btn-cancel').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.resetForm = () => {
+            document.getElementById('main-form').reset();
+            document.getElementById('input-id').value = "";
+            document.getElementById('main-form').classList.remove('editing');
+            document.getElementById('btn-submit').textContent = "Guardar Gasto";
+            document.getElementById('btn-cancel').classList.add('hidden');
+            document.getElementById('input-fecha').value = new Date().toISOString().split('T')[0];
+        };
+
         document.getElementById('main-form').onsubmit = async (e) => {
             e.preventDefault();
             const fd = new FormData(e.target);
             const key = { 'DIARIOS': 'DAILY', 'MENSUAL': 'MONTHLY', 'SOLO JC': 'JC_ONLY' }[state.activeTab];
             
-            // VALIDACIÓN ESTRICTA (Punto 4)
+            // Validación estricta
             const conceptoIngresado = fd.get('concepto').toUpperCase();
-            const listaValida = state.categories[key] || [];
-            if (!listaValida.includes(conceptoIngresado)) {
-                alert(`"${conceptoIngresado}" no es un gasto aceptado. Por favor elige uno de la lista.`);
-                return;
+            if (!(state.categories[key] || []).includes(conceptoIngresado)) {
+                alert("El gasto no está en la lista permitida."); return;
             }
 
-            if(state.activeTab === 'SOLO JC') fd.set('pagador', 'tania');
+            // Blindaje minúsculas
+            const pag = (fd.get('pagador') || 'juan').toLowerCase().trim();
+            fd.set('pagador', state.activeTab === 'SOLO JC' ? 'tania' : pag);
+
             const btn = document.getElementById('btn-submit');
             btn.disabled = true; btn.textContent = "GUARDANDO...";
-            await api({ action: 'REGISTER', sheetKey: key, data: Object.fromEntries(fd) });
-            e.target.reset(); 
-            document.getElementById('input-fecha').value = new Date().toISOString().split('T')[0];
-            await refresh(); btn.disabled = false; btn.textContent = "Guardar Gasto";
+            
+            const action = fd.get('id') ? 'UPDATE' : 'REGISTER';
+            await api({ action: action, sheetKey: key, data: Object.fromEntries(fd) });
+            
+            resetForm();
+            await refresh();
+            btn.disabled = false;
         };
 
         window.del = async (id, key) => { if(confirm("¿Borrar?")) { await api({ action: 'DELETE', sheetKey: key, data: {id} }); refresh(); } };
@@ -195,7 +216,9 @@
             b.onclick = () => {
                 state.activeTab = b.dataset.tab;
                 document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active-tab'));
-                b.classList.add('active-tab'); render();
+                b.classList.add('active-tab'); 
+                resetForm();
+                render();
             };
         });
 
